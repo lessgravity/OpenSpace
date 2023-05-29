@@ -1,0 +1,19 @@
+using lessGravity.Native.OpenGL;
+
+namespace OpenSpace.Engine.Graphics;
+
+internal sealed class IndexBuffer<TIndex> : Buffer<TIndex>, IIndexBuffer
+    where TIndex: unmanaged
+{
+    internal IndexBuffer(Label label)
+        : base(BufferTarget.IndexBuffer, label)
+    {
+    }
+
+    public void Bind(IInputLayout inputLayout)
+    {
+        GL.VertexArrayElementBuffer(
+            inputLayout.Id,
+            Id);
+    }
+}

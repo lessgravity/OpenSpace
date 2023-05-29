@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\lib\lessGravity.Native.GLFW\lessGravity.Native.GLFW.csproj" />
+        <ProjectReference Include="..\..\lib\lessGravity.Native.OpenGL\lessGravity.Native.OpenGL.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CSharpFunctionalExtensions" Version="2.38.1" />
+        <PackageReference Include="ImGui.NET" Version="1.89.4" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.0" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
+        <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0026" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Serilog" Version="2.12.0" />
+    </ItemGroup>
+
+</Project>
