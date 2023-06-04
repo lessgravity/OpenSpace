@@ -237,7 +237,7 @@ public class Application : IApplication
         _windowHandle = Glfw.CreateWindow(
             _applicationContext.WindowSize.X,
             _applicationContext.WindowSize.Y,
-            "Experiment",
+            "OpenSpace",
             monitorHandle,
             nint.Zero);
         if (_windowHandle == nint.Zero)
