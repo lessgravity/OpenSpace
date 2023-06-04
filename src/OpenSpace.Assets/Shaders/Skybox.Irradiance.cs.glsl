@@ -10,23 +10,7 @@ const float InvNumSamples = 1.0 / float(NumSamples);
 layout(binding = 0) uniform samplerCube s_environment;
 layout(binding = 0, rgba16f) uniform restrict writeonly imageCube s_irradiance;
 
-// Compute Van der Corput radical inverse
-// See: http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
-float radicalInverse_VdC(uint bits)
-{
-	bits = (bits << 16u) | (bits >> 16u);
-	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
-}
-
-// Sample i-th point from Hammersley point set of NumSamples points total.
-vec2 sampleHammersley(uint i)
-{
-	return vec2(i * InvNumSamples, radicalInverse_VdC(i));
-}
+#include <Module.Hammersley.glsl>
 
 // Uniformly sample point on a hemisphere.
 // Cosine-weighted sampling would be a better fit for Lambertian BRDF but since this
@@ -42,7 +26,7 @@ vec3 sampleHemisphere(float u1, float u2)
 // This is essentially "inverse-sampling": we reconstruct what the sampling vector would be if we wanted it to "hit"
 // this particular fragment in a cubemap.
 // See: OpenGL core profile specs, section 8.13.
-vec3 getSamplingVector()
+vec3 GetSamplingVector()
 {
     vec2 st = gl_GlobalInvocationID.xy/vec2(imageSize(s_irradiance));
     vec2 uv = 2.0 * vec2(st.x, 1.0-st.y) - vec2(1.0);
@@ -78,7 +62,7 @@ vec3 tangentToWorld(const vec3 v, const vec3 N, const vec3 S, const vec3 T)
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 void main(void)
 {
-	vec3 N = getSamplingVector();
+	vec3 N = GetSamplingVector();
 	
 	vec3 S, T;
 	computeBasisVectors(N, S, T);
@@ -89,7 +73,7 @@ void main(void)
 	vec3 irradiance = vec3(0);
 	for(uint i = 0; i < NumSamples; ++i)
 	{
-		vec2 u = sampleHammersley(i);
+		vec2 u = Hammersley(i, NumSamples);
 		vec3 Li = tangentToWorld(sampleHemisphere(u.x, u.y), N, S, T);
 		float cosTheta = max(0.0, dot(Li, N));
 
