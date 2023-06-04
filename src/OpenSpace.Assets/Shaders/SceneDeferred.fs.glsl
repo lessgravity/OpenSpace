@@ -16,11 +16,13 @@ layout(location = 4) out vec4 o_emissive;
 
 struct GpuMaterial
 {
-    vec4 BaseColor;
+    vec4 BaseColorFactor;
+    vec4 EmissiveFactor;
     
-    vec4 MetalnessRoughnessOcclusion;
-    
-    vec4 EmissiveColor;
+    float MetallicFactor;
+    float RoughnessFactor;
+    float AlphaCutOff;
+    int AlphaMode;    
     
     uvec2 BaseColorTexture;
     uvec2 NormalTexture;
@@ -53,7 +55,7 @@ void main()
 {
     GpuMaterial material = materialBuffer.Materials[v_mesh_material_id];
 
-    vec4 albedo = material.BaseColor;
+    vec4 albedo = material.BaseColorFactor;
     if (material.BaseColorTexture.x != 0)
     {
         albedo = texture(sampler2D(material.BaseColorTexture), v_uv);
@@ -75,31 +77,36 @@ void main()
     {
         normal = normalize(v_tbn[2]);
     }
-    
-    float metalness = material.MetalnessRoughnessOcclusion.r;
-    float roughness = material.MetalnessRoughnessOcclusion.g;
+
+    float occlusion = 1.0f;
+    float roughness = material.RoughnessFactor;    
+    float metalness = material.MetallicFactor;
+        
     if (material.MetalnessRoughnessTexture.x != 0)
     {
-        vec2 metalnessRoughness = texture(sampler2D(material.MetalnessRoughnessTexture), v_uv).gb;
-        metalness = metalnessRoughness.r;
-        roughness = metalnessRoughness.g;
+        vec3 metalnessRoughness = texture(sampler2D(material.MetalnessRoughnessTexture), v_uv).rgb;
+        occlusion = metalnessRoughness.r;
+        roughness = metalnessRoughness.g * roughness;                
+        metalness = metalnessRoughness.b * metalness;
     }
+    
+    roughness = clamp(roughness, 0.04, 1.0);
+    metalness = clamp(metalness, 0.0, 1.0); 
 
-    float occlusion = material.MetalnessRoughnessOcclusion.b;
     if (material.OcclusionTexture.x != 0)
     {
         occlusion = texture(sampler2D(material.OcclusionTexture), v_uv).r;
     }
     
-    vec3 emissive = vec3(material.EmissiveColor.rgb);
+    vec3 emissive = material.EmissiveFactor.rgb;
     if (material.EmissiveTexture.x != 0)
     {
-        emissive = texture(sampler2D(material.EmissiveTexture), v_uv).rgb * 3.0;
+        emissive = texture(sampler2D(material.EmissiveTexture), v_uv).rgb * emissive;
     }
     
     o_albedo = albedo;
     o_normal = vec4(normal, 1.0);
-    o_material = vec4(metalness, roughness, occlusion, 1.0);
+    o_material = vec4(occlusion, roughness, metalness, 1.0);
     o_motion = vec4(0.5, 0.5, v_mesh_material_id, 1.0);
     o_emissive = vec4(emissive, 1.0);
 }

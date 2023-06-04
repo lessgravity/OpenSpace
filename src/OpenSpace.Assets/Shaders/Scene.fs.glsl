@@ -14,7 +14,11 @@ layout(binding = 0) uniform sampler2D s_base_color;
 struct GpuMaterial
 {
     vec4 BaseColor;
-    vec4 MetalnessRoughness;    
+    vec4 EmissiveColorFactor;
+    float MetalnessFactor;
+    float RoughnessFactor;
+    float AlphaCutOff;
+    int AlphaMode;
     uvec2 BaseColorTextureId;
     uvec2 NormalTextureId;
     uvec2 MetalnessRoughnessTextureId;

@@ -71,15 +71,18 @@ internal sealed class MaterialPool : IMaterialPool
 
         var gpuMaterial = new GpuMaterial
         {
-            BaseColor = material.BaseColor,
+            BaseColorFactor = material.BaseColor,
             BaseColorTexture = material.BaseColorTexture?.TextureHandle ?? 0,
             NormalTexture = material.NormalTexture?.TextureHandle ?? 0,
-            MetalnessRoughnessOcclusion = new Vector4( material.MetallicFactor, material.RoughnessFactor, material.OcclusionFactor, 1.0f),
+            MetallicFactor = material.MetallicFactor,
+            RoughnessFactor = material.RoughnessFactor,
             MetalnessRoughnessTexture = material.MetalnessRoughnessTexture?.TextureHandle ?? 0,
             SpecularTexture = material.SpecularTexture?.TextureHandle ?? 0,
             OcclusionTexture = material.OcclusionTexture?.TextureHandle ?? 0,
-            EmissiveColor = material.EmissiveColor.ToVector4(),
-            EmissiveTexture = material.EmissiveTexture?.TextureHandle ?? 0
+            EmissiveFactor = material.EmissiveColor.ToVector4(),
+            EmissiveTexture = material.EmissiveTexture?.TextureHandle ?? 0,
+            AlphaMode = 0,
+            AlphaCutOff = 1.0f
         };
 
         pooledMaterial = new PooledMaterial(_pooledMaterials.Count);
