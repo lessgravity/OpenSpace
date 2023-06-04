@@ -270,9 +270,16 @@ public record Material(string Name)
                     ? null
                     : graphicsContext.CreateTextureFromFile(BaseColorTextureFilePath, Format.R8G8B8A8Srgb, true, false, false);
             sw.Stop();
-            if (makeResident && BaseColorTexture != null && BaseColorTextureSamplerInformation.HasValue)
+            if (makeResident && BaseColorTexture != null)
             {
-                BaseColorTexture.MakeResident(samplerLibrary.GetSampler(BaseColorTextureSamplerInformation.Value));
+                if (BaseColorTextureSamplerInformation.HasValue)
+                {
+                    BaseColorTexture.MakeResident(samplerLibrary.GetSampler(BaseColorTextureSamplerInformation.Value));
+                }
+                else
+                {
+                    BaseColorTexture.MakeResident();
+                }
                 textures.Add(BaseColorTextureDataName, BaseColorTexture);
                 logger.Debug("App: Loading baseColor texture {TextureName} took {LoadingTime}ms", BaseColorTextureDataName, sw.ElapsedMilliseconds);
             }
@@ -287,9 +294,17 @@ public record Material(string Name)
                     ? null
                     : graphicsContext.CreateTextureFromFile(NormalTextureFilePath, Format.R8G8B8A8UNorm, true, false, false);
             sw.Stop();
-            if (makeResident && NormalTexture != null && NormalTextureSamplerInformation.HasValue)
+            if (makeResident && NormalTexture != null)
             {
-                NormalTexture.MakeResident(samplerLibrary.GetSampler(NormalTextureSamplerInformation.Value));
+                if (NormalTextureSamplerInformation.HasValue)
+                {
+                    NormalTexture.MakeResident(samplerLibrary.GetSampler(NormalTextureSamplerInformation.Value));
+                }
+                else
+                {
+                    NormalTexture.MakeResident();
+                }
+
                 textures.Add(NormalTextureDataName, NormalTexture);
                 logger.Debug("App: Loading normal texture {TextureName} took {LoadingTime}ms", NormalTextureDataName, sw.ElapsedMilliseconds);
             }
@@ -305,9 +320,17 @@ public record Material(string Name)
                     ? null
                     : graphicsContext.CreateTextureFromFile(MetalnessRoughnessTextureFilePath, Format.R8G8B8A8UNorm, true, false, false);
             sw.Stop();
-            if (makeResident && MetalnessRoughnessTexture != null && MetalnessRoughnessTextureSamplerInformation.HasValue)
+            if (makeResident && MetalnessRoughnessTexture != null)
             {
-                MetalnessRoughnessTexture.MakeResident(samplerLibrary.GetSampler(MetalnessRoughnessTextureSamplerInformation.Value));
+                if (MetalnessRoughnessTextureSamplerInformation.HasValue)
+                {
+                    MetalnessRoughnessTexture.MakeResident(samplerLibrary.GetSampler(MetalnessRoughnessTextureSamplerInformation.Value));
+                }
+                else
+                {
+                    MetalnessRoughnessTexture.MakeResident();
+                }
+
                 textures.Add(MetalnessRoughnessTextureDataName, MetalnessRoughnessTexture);
                 logger.Debug("App: Loading metalnessRoughness texture {TextureName} took {LoadingTime}ms", MetalnessRoughnessTextureDataName, sw.ElapsedMilliseconds);
             }
@@ -323,9 +346,16 @@ public record Material(string Name)
                     ? null
                     : graphicsContext.CreateTextureFromFile(SpecularTextureFilePath, Format.R8G8B8A8UNorm, true, false, false);
             sw.Stop();
-            if (makeResident && SpecularTexture != null && SpecularTextureSamplerInformation.HasValue)
+            if (makeResident && SpecularTexture != null)
             {
-                SpecularTexture.MakeResident(samplerLibrary.GetSampler(SpecularTextureSamplerInformation.Value));
+                if (SpecularTextureSamplerInformation.HasValue)
+                {
+                    SpecularTexture.MakeResident(samplerLibrary.GetSampler(SpecularTextureSamplerInformation.Value));
+                }
+                else
+                {
+                    SpecularTexture.MakeResident();
+                }
                 textures.Add(SpecularTextureDataName, SpecularTexture);
                 logger.Debug("App: Loading specular texture {TextureName} took {LoadingTime}ms", SpecularTextureDataName, sw.ElapsedMilliseconds);
             }
@@ -341,9 +371,17 @@ public record Material(string Name)
                     ? null
                     : graphicsContext.CreateTextureFromFile(OcclusionTextureFilePath, Format.R8G8B8A8UNorm, true, false, false);
             sw.Stop();
-            if (makeResident && OcclusionTexture != null && OcclusionTextureSamplerInformation.HasValue)
+            if (makeResident && OcclusionTexture != null)
             {
-                OcclusionTexture.MakeResident(samplerLibrary.GetSampler(OcclusionTextureSamplerInformation.Value));
+                if (OcclusionTextureSamplerInformation.HasValue)
+                {
+                    OcclusionTexture.MakeResident(samplerLibrary.GetSampler(OcclusionTextureSamplerInformation.Value));
+                }
+                else
+                {
+                    OcclusionTexture.MakeResident();
+                }
+
                 textures.Add(OcclusionTextureDataName, OcclusionTexture);
                 logger.Debug("App: Loading occlusion texture {TextureName} took {LoadingTime}ms", OcclusionTextureDataName, sw.ElapsedMilliseconds);
             }
@@ -359,9 +397,17 @@ public record Material(string Name)
                     ? null
                     : graphicsContext.CreateTextureFromFile(EmissiveTextureFilePath, Format.R8G8B8A8Srgb, true, false, false);
             sw.Stop();
-            if (makeResident && EmissiveTexture != null && EmissiveTextureSamplerInformation.HasValue)
+            if (makeResident && EmissiveTexture != null)
             {
-                EmissiveTexture.MakeResident(samplerLibrary.GetSampler(EmissiveTextureSamplerInformation.Value));
+                if (EmissiveTextureSamplerInformation.HasValue)
+                {
+                    EmissiveTexture.MakeResident(samplerLibrary.GetSampler(EmissiveTextureSamplerInformation.Value));
+                }
+                else
+                {
+                    EmissiveTexture.MakeResident();
+                }
+
                 textures.Add(EmissiveTextureDataName, EmissiveTexture);
                 logger.Debug("App: Loading emissive texture {TextureName} took {LoadingTime}ms", EmissiveTextureDataName, sw.ElapsedMilliseconds);
             }
