@@ -2,6 +2,11 @@ namespace OpenSpace.Engine.Graphics;
 
 public readonly record struct SwizzleMapping
 {
+    public static SwizzleMapping CreateForDepthTextures()
+    {
+        return new SwizzleMapping(Swizzle.Red, Swizzle.Red, Swizzle.Red, Swizzle.One);
+    }
+    
     public SwizzleMapping(
         Swizzle red = Swizzle.Red,
         Swizzle green = Swizzle.Green,
