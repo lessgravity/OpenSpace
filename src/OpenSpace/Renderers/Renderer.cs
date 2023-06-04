@@ -40,20 +40,6 @@ internal class Renderer : IRenderer
     
     private SwapchainDescriptor _swapchainDescriptor;
 
-    private ITexture? _gBufferAlbedoTexture;
-    private TextureView? _gBufferAlbedoTextureView;
-    private ITexture? _gBufferNormalTexture;
-    private TextureView? _gBufferNormalTextureView;
-    private ITexture? _gBufferMaterialTexture;
-    private TextureView? _gBufferMaterialTextureView;
-    private ITexture? _gBufferMotionTexture;
-    private TextureView? _gBufferMotionTextureView;
-    private ITexture? _gBufferEmissiveTexture;
-    private TextureView? _gBufferEmissiveTextureView;
-    private ITexture? _depthBufferTexture;
-    private TextureView? _depthBufferTextureView;
-    private FramebufferDescriptor _gBufferPassDescriptor;
-    private IGraphicsPipeline? _gBufferPassGraphicsPipeline;
 
     private ITexture? _finalTexture;
     private TextureView? _finalTextureView;
@@ -74,6 +60,9 @@ internal class Renderer : IRenderer
     private IIndirectBuffer? _indirectBuffer;
     private IShaderStorageBuffer? _instanceBuffer;
     private readonly IList<MeshInstance> _meshInstances;
+
+    private GpuLightPassParameters _lightPassParameters;
+    private IUniformBuffer? _lightPassParametersBuffer;
 
     private readonly IList<GlobalLight> _globalLights;
     private bool _updateGlobalLights;
@@ -114,7 +103,8 @@ internal class Renderer : IRenderer
 
     private ProgramMode _programMode;
 
-    private PrepareImageBasedLightingPass _preparePrepareImageBasedLightingPass;
+    private readonly PrepareImageBasedLightingPass _preparePrepareImageBasedLightingPass;
+    private readonly GBufferPass _gBufferPass;
 
     public Renderer(
         ILogger logger,
@@ -138,28 +128,30 @@ internal class Renderer : IRenderer
         
         _shadowSettings = new GpuShadowSettings();
         _tonemapSamples = new float[100];
+        _lightPassParameters = new GpuLightPassParameters();
         
         messageBus.Subscribe<SwitchedToGameModeMessage>(SwitchedToGameMode);
         messageBus.Subscribe<SwitchedToEditorModeMessage>(SwitchedToEditorMode);
 
         _preparePrepareImageBasedLightingPass = new PrepareImageBasedLightingPass(logger, graphicsContext);
+        _gBufferPass = new GBufferPass(logger, graphicsContext, applicationContext);
     }
 
     public int SelectedTextureToBeRendered => _selectedTextureToBeRendered;
 
     public TextureView? FinalTexture => _finalTextureView;
 
-    public TextureView? DepthTexture => _depthBufferTextureView;
+    public TextureView? DepthTexture => _gBufferPass.DepthBufferTextureView;
 
-    public TextureView? GBufferAlbedoTexture => _gBufferAlbedoTextureView;
+    public TextureView? GBufferAlbedoTexture => _gBufferPass.GBufferAlbedoTextureView;
 
-    public TextureView? GBufferNormalsTexture => _gBufferNormalTextureView;
+    public TextureView? GBufferNormalsTexture => _gBufferPass.GBufferNormalTextureView;
 
-    public TextureView? GBufferMaterialTexture => _gBufferMaterialTextureView;
+    public TextureView? GBufferMaterialTexture => _gBufferPass.GBufferMaterialTextureView;
 
-    public TextureView? GBufferMotionTexture => _gBufferMotionTextureView;
+    public TextureView? GBufferMotionTexture => _gBufferPass.GBufferMotionTextureView;
 
-    public TextureView? GBufferEmissiveTexture => _gBufferEmissiveTextureView;
+    public TextureView? GBufferEmissiveTexture => _gBufferPass.GBufferEmissiveTextureView;
 
     public TextureView? LightsTexture => _lightsTextureView;
 
@@ -180,7 +172,6 @@ internal class Renderer : IRenderer
         _linearMipmapLinearRepeatSampler?.Dispose();
         _linearMipmapLinearClampedSampler?.Dispose();
         
-        _gBufferPassGraphicsPipeline?.Dispose();
         _finalPassGraphicsPipeline?.Dispose();
 
         _shadowSettingsBuffer?.Dispose();
@@ -194,7 +185,10 @@ internal class Renderer : IRenderer
         _materialPool?.Dispose();
         _meshPool?.Dispose();
         
-        _preparePrepareImageBasedLightingPass?.Dispose();
+        _lightPassParametersBuffer?.Dispose();
+        
+        _gBufferPass.Dispose();
+        _preparePrepareImageBasedLightingPass.Dispose();
         
         _shadowPassGraphicsPipeline?.Dispose();
         
@@ -325,6 +319,9 @@ internal class Renderer : IRenderer
         _shadowSettingsBuffer = _graphicsContext.CreateUniformBuffer<GpuShadowSettings>("ShadowSettings");
         _shadowSettingsBuffer.AllocateStorage(Marshal.SizeOf<GpuShadowSettings>(), StorageAllocationFlags.Dynamic);
 
+        _lightPassParametersBuffer = _graphicsContext.CreateUniformBuffer<GpuLightPassParameters>("LightPassParameters");
+        _lightPassParametersBuffer.AllocateStorage(Marshal.SizeOf<GpuLightPassParameters>(), StorageAllocationFlags.Dynamic);
+
         _uchimuraSettingsBuffer = _graphicsContext.CreateUniformBuffer<GpuUchimuraSettings>("Tonemapping-Ochimura-Settings");
         _uchimuraSettingsBuffer.AllocateStorage(Marshal.SizeOf<GpuUchimuraSettings>(), StorageAllocationFlags.Dynamic);
 
@@ -347,12 +344,21 @@ internal class Renderer : IRenderer
 
         _blueNoiseTexture = _graphicsContext.CreateTextureFromFile("Data/Default/T_Bluenoise256.png", Format.R8G8B8A8UNorm, true);
 
-        var imageBasedLightingPassOptions = new ImageBasedLightingPassOptions(32, 128, 256, "Miramar");
+        var imageBasedLightingPassOptions = new ImageBasedLightingPassOptions(
+            128, 
+            1024, 
+            256, 
+            "DigitalNuclearReactor");
         if (!_preparePrepareImageBasedLightingPass.Load(imageBasedLightingPassOptions))
         {
             return false;
         }
-        
+
+        _lightPassParameters.Gamma = 2.2f;
+        _lightPassParameters.Exposure = 4.0f;
+        _lightPassParameters.PrefilteredCubeMipLevels = _preparePrepareImageBasedLightingPass.PrefilteredCubeTextureMipLevels;
+        _lightPassParameters.ScaleIblAmbient = 2.0f;
+        _lightPassParametersBuffer.Update(_lightPassParameters);        
         _preparePrepareImageBasedLightingPass.Render();
         
         GL.Enable(GL.EnableType.TextureCubemapSeamless);
@@ -389,8 +395,13 @@ internal class Renderer : IRenderer
         _cameraInformationBuffer.Update(_cameraInformation);
 
         UpdateGeometryBuffersIfNecessary();
-        
-        RenderPassGBuffer();
+
+        _gBufferPass.Render(
+            ref _meshPool,
+            ref _materialPool,
+            ref _cameraInformationBuffer,
+            ref _instanceBuffer,
+            ref _indirectBuffer, _meshInstances.Count);
 
         RenderLights(camera);
         
@@ -544,18 +555,7 @@ internal class Renderer : IRenderer
 
     private void DestroyFramebuffers()
     {
-        _gBufferAlbedoTexture?.Dispose();
-        _gBufferAlbedoTextureView?.Dispose();
-        _gBufferNormalTexture?.Dispose();
-        _gBufferNormalTextureView?.Dispose();
-        _gBufferMaterialTexture?.Dispose();
-        _gBufferMaterialTextureView?.Dispose();
-        _gBufferMotionTexture?.Dispose();
-        _gBufferMotionTextureView?.Dispose();
-        _gBufferEmissiveTexture?.Dispose();
-        _gBufferEmissiveTextureView?.Dispose();
-        _depthBufferTexture?.Dispose();
-        _graphicsContext.RemoveFramebuffer(_gBufferPassDescriptor);
+        _gBufferPass.DestroyResolutionDependentFramebuffers();
         
         _finalTexture?.Dispose();
         _graphicsContext.RemoveFramebuffer(_finalPassDescriptor);
@@ -566,46 +566,7 @@ internal class Renderer : IRenderer
 
     private void CreateFramebuffers()
     {
-        _gBufferAlbedoTexture = _graphicsContext.CreateTexture2D(
-            _applicationContext.ScaledFramebufferSize.X,
-            _applicationContext.ScaledFramebufferSize.Y,
-            Format.R8G8B8A8Srgb, "GBuffer-Albedo-ColorAttachment");
-        _gBufferNormalTexture = _graphicsContext.CreateTexture2D(
-            _applicationContext.ScaledFramebufferSize.X,
-            _applicationContext.ScaledFramebufferSize.Y,
-            Format.R16G16B16A16Float, "GBuffer-Normal-ColorAttachment");
-        _gBufferMaterialTexture = _graphicsContext.CreateTexture2D(
-            _applicationContext.ScaledFramebufferSize.X,
-            _applicationContext.ScaledFramebufferSize.Y,
-            Format.R16G16B16A16Float, "GBuffer-Material-ColorAttachment");
-        _gBufferMotionTexture = _graphicsContext.CreateTexture2D(
-            _applicationContext.ScaledFramebufferSize.X,
-            _applicationContext.ScaledFramebufferSize.Y,
-            Format.R16G16B16A16Float, "GBuffer-Motion-ColorAttachment");
-        _gBufferEmissiveTexture = _graphicsContext.CreateTexture2D(
-            _applicationContext.ScaledFramebufferSize.X,
-            _applicationContext.ScaledFramebufferSize.Y,
-            Format.R16G16B16A16Float, "GBuffer-Emissive-ColorAttachment");
-        _depthBufferTexture = _graphicsContext.CreateTexture2D(
-            _applicationContext.ScaledFramebufferSize.X,
-            _applicationContext.ScaledFramebufferSize.Y,
-            Format.D32Float, "GBuffer-DepthAttachment");
-        _gBufferPassDescriptor = new FramebufferDescriptorBuilder()
-            .WithColorAttachment(_gBufferAlbedoTexture, false, Color4.Black)
-            .WithColorAttachment(_gBufferNormalTexture, true, Color4.Black)
-            .WithColorAttachment(_gBufferMaterialTexture, true, Color4.Black)
-            .WithColorAttachment(_gBufferMotionTexture, true, Color4.Black)
-            .WithColorAttachment(_gBufferEmissiveTexture, true, Color4.Black)
-            .WithDepthAttachment(_depthBufferTexture, true)
-            .WithViewport(_applicationContext.ScaledFramebufferSize.X, _applicationContext.ScaledFramebufferSize.Y)
-            .Build("GBuffer");
-
-        _gBufferAlbedoTextureView = _gBufferAlbedoTexture.CreateTextureView(new SwizzleMapping(alpha: Swizzle.One));
-        _gBufferNormalTextureView = _gBufferNormalTexture.CreateTextureView(new SwizzleMapping(alpha: Swizzle.One));
-        _gBufferMaterialTextureView = _gBufferMaterialTexture.CreateTextureView(new SwizzleMapping(alpha: Swizzle.One));
-        _gBufferMotionTextureView = _gBufferMotionTexture.CreateTextureView(new SwizzleMapping(alpha: Swizzle.One));
-        _gBufferEmissiveTextureView = _gBufferEmissiveTexture.CreateTextureView(new SwizzleMapping(alpha: Swizzle.One));
-        _depthBufferTextureView = _depthBufferTexture.CreateTextureView(new SwizzleMapping(red: Swizzle.Red, green: Swizzle.Red, blue: Swizzle.Red, alpha: Swizzle.One));
+        _gBufferPass.CreateResolutionDependentFramebuffers();
         
         _lightsTexture = _graphicsContext.CreateTexture2D(
             _applicationContext.ScaledFramebufferSize.X,
@@ -644,15 +605,12 @@ internal class Renderer : IRenderer
 #else
     private
 #endif
-        bool ReloadPipelines(
+    bool ReloadPipelines(
 #if DEBUG
-            string? sourcePath
+            string sourcePath
 #endif
         )
     {
-        const string sceneDeferredVertexShader = "Shaders/SceneDeferred.vs.glsl";
-        const string sceneDeferredFragmentShader = "Shaders/SceneDeferred.fs.glsl";
-
         const string globalShadowMapVertexShader = "Shaders/Shadow.vs.glsl";
         const string globalShadowMapFragmentShader = "Shaders/Shadow.fs.glsl";
         
@@ -666,12 +624,9 @@ internal class Renderer : IRenderer
         const string finalFragmentShader = "Shaders/Final.fs.glsl";
         
 #if DEBUG
+        var destinationPath = AppDomain.CurrentDomain.BaseDirectory;
         if (!string.IsNullOrEmpty(sourcePath))
         {
-            var destinationPath = AppDomain.CurrentDomain.BaseDirectory;
-            File.Copy(Path.Combine(sourcePath, sceneDeferredVertexShader), Path.Combine(destinationPath, sceneDeferredVertexShader), true);
-            File.Copy(Path.Combine(sourcePath, sceneDeferredFragmentShader), Path.Combine(destinationPath, sceneDeferredFragmentShader), true);
-            
             File.Copy(Path.Combine(sourcePath, globalShadowMapVertexShader), Path.Combine(destinationPath, globalShadowMapVertexShader), true);
             File.Copy(Path.Combine(sourcePath, globalShadowMapFragmentShader), Path.Combine(destinationPath, globalShadowMapFragmentShader), true);
             
@@ -685,30 +640,7 @@ internal class Renderer : IRenderer
             File.Copy(Path.Combine(sourcePath, finalFragmentShader), Path.Combine(destinationPath, finalFragmentShader), true);
         }
 #endif
-
-        var gBufferGraphicsPipelineResult = _graphicsContext.CreateGraphicsPipelineBuilder()
-            .WithShadersFromFiles(sceneDeferredVertexShader, sceneDeferredFragmentShader)
-            .WithVertexInput(new VertexInputDescriptorBuilder()
-                .AddAttribute(0, DataType.Float, 3, 0)
-                .AddAttribute(0, DataType.Float, 3, 12)
-                .AddAttribute(0, DataType.Float, 2, 24)
-                .AddAttribute(0, DataType.Float, 4, 32)
-                .Build(nameof(VertexPositionNormalUvTangent)))
-            .WithTopology(PrimitiveTopology.Triangles)
-            .WithFaceWinding(FaceWinding.CounterClockwise)
-            .EnableCulling(CullMode.Back)
-            .EnableDepthTest()
-            .Build("GBufferPass");
-
-        if (gBufferGraphicsPipelineResult.IsFailure)
-        {
-            _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
-                "GBufferPass", gBufferGraphicsPipelineResult.Error);
-            return false;
-        }
-        _gBufferPassGraphicsPipeline?.Dispose();
-        _gBufferPassGraphicsPipeline = gBufferGraphicsPipelineResult.Value;
-        _logger.Debug("Renderer: Build pipeline {PipelineName}", _gBufferPassGraphicsPipeline.Label);
+        _gBufferPass.ReloadPipeline(sourcePath, destinationPath);
 
         var lightsGlobalPassGraphicsPipelineResult = _graphicsContext.CreateGraphicsPipelineBuilder()
             .WithShadersFromFiles(lightsGlobalVertexShader, lightsGlobalFragmentShader)
@@ -724,7 +656,7 @@ internal class Renderer : IRenderer
         if (lightsGlobalPassGraphicsPipelineResult.IsFailure)
         {
             _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
-                "LightsGlobalPass", gBufferGraphicsPipelineResult.Error);
+                "LightsGlobalPass", lightsGlobalPassGraphicsPipelineResult.Error);
             return false;
         }
         _lightsGlobalPassGraphicsPipeline?.Dispose();
@@ -744,7 +676,7 @@ internal class Renderer : IRenderer
         if (lightsLocalPassGraphicsPipelineResult.IsFailure)
         {
             _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
-                "LightsLocalPass", gBufferGraphicsPipelineResult.Error);
+                "LightsLocalPass", lightsLocalPassGraphicsPipelineResult.Error);
             return false;
         }
         _lightsLocalPassGraphicsPipeline?.Dispose();
@@ -764,7 +696,7 @@ internal class Renderer : IRenderer
         if (finalPassGraphicsPipelineResult.IsFailure)
         {
             _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
-                "FinalPass", gBufferGraphicsPipelineResult.Error);
+                "FinalPass", finalPassGraphicsPipelineResult.Error);
             return false;
         }
         _finalPassGraphicsPipeline?.Dispose();
@@ -792,26 +724,6 @@ internal class Renderer : IRenderer
 
         return true;
     }
-    
-    private void RenderPassGBuffer()
-    {
-        if (_gBufferPassGraphicsPipeline == null || _meshPool == null || _materialPool == null ||
-            _cameraInformationBuffer == null || _indirectBuffer == null)
-        {
-            return;
-        }
-        
-        _graphicsContext.BindGraphicsPipeline(_gBufferPassGraphicsPipeline!);
-
-        _graphicsContext.BeginRenderToFramebuffer(_gBufferPassDescriptor);
-        _gBufferPassGraphicsPipeline.BindVertexBuffer(_meshPool.VertexBuffer, 0, 0);
-        _gBufferPassGraphicsPipeline.BindIndexBuffer(_meshPool.IndexBuffer);
-        _gBufferPassGraphicsPipeline.BindUniformBuffer(_cameraInformationBuffer, 0);
-        _gBufferPassGraphicsPipeline.BindShaderStorageBuffer(_instanceBuffer, 1);
-        _gBufferPassGraphicsPipeline.BindShaderStorageBuffer(_materialPool.MaterialBuffer, 2);
-        _gBufferPassGraphicsPipeline.MultiDrawElementsIndirect(_indirectBuffer, _meshInstances.Count);
-        _graphicsContext.EndRender();
-    }
 
     private void RenderLights(ICamera camera)
     {
@@ -827,7 +739,7 @@ internal class Renderer : IRenderer
         
         _graphicsContext.BeginRenderToFramebuffer(_lightsPassDescriptor);
 
-        RenderGlobalLights();
+        RenderPassGlobalLights();
         
         //RenderLocalLights();
 
@@ -902,18 +814,13 @@ internal class Renderer : IRenderer
         globalLightBuffer.Dispose();
     }
 
-    private void RenderGlobalLights()
+    private void RenderPassGlobalLights()
     {
         if (_lightsGlobalPassGraphicsPipeline == null || 
             _shadowSettingsBuffer == null || 
             _globalLightsBuffer == null ||
             _cameraInformationBuffer == null ||
             _nearestSampler == null || 
-            _depthBufferTexture == null || 
-            _gBufferAlbedoTexture == null || 
-            _gBufferNormalTexture == null ||
-            _gBufferMaterialTexture == null || 
-            _gBufferEmissiveTexture == null || 
             _linearMipmapLinearRepeatSampler == null ||
             _preparePrepareImageBasedLightingPass.IrradianceCubeTexture == null ||
             _preparePrepareImageBasedLightingPass.PrefilteredCubeTexture == null ||
@@ -954,14 +861,15 @@ internal class Renderer : IRenderer
         
         _lightsGlobalPassGraphicsPipeline.BindUniformBuffer(_cameraInformationBuffer, 0);
         _lightsGlobalPassGraphicsPipeline.BindUniformBuffer(_shadowSettingsBuffer, 1);
-        _lightsGlobalPassGraphicsPipeline.BindShaderStorageBuffer(_globalLightsBuffer, 2);
-        _lightsGlobalPassGraphicsPipeline.BindShaderStorageBuffer(_localLightsBuffer, 3);
+        _lightsGlobalPassGraphicsPipeline.BindUniformBuffer(_lightPassParametersBuffer, 2);
+        _lightsGlobalPassGraphicsPipeline.BindShaderStorageBuffer(_globalLightsBuffer, 3);
+        _lightsGlobalPassGraphicsPipeline.BindShaderStorageBuffer(_localLightsBuffer, 4);
             
-        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _depthBufferTexture, 0);
-        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferAlbedoTexture, 1);
-        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferNormalTexture, 2);
-        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferMaterialTexture, 3);
-        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferEmissiveTexture, 4);
+        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.DepthBufferTexture, 0);
+        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.GBufferAlbedoTexture, 1);
+        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.GBufferNormalTexture, 2);
+        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.GBufferMaterialTexture, 3);
+        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.GBufferEmissiveTexture, 4);
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearRepeatSampler, _blueNoiseTexture, 5);
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearClampedSampler, _preparePrepareImageBasedLightingPass.BrdfIntegrationLutTexture, 6);        
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearRepeatSampler, _preparePrepareImageBasedLightingPass.IrradianceCubeTexture, 7);
@@ -1001,7 +909,6 @@ internal class Renderer : IRenderer
     {
         if (_cameraInformationBuffer == null || 
             _nearestSampler == null || 
-            _depthBufferTexture == null ||
             _lightsTexture == null || 
             _linearMipmapLinearRepeatSampler == null || 
             _preparePrepareImageBasedLightingPass.PrefilteredCubeTexture == null ||
@@ -1019,7 +926,7 @@ internal class Renderer : IRenderer
         _graphicsContext.BindGraphicsPipeline(_finalPassGraphicsPipeline!);
         _graphicsContext.BeginRenderToFramebuffer(_finalPassDescriptor);
         _finalPassGraphicsPipeline.BindUniformBuffer(_cameraInformationBuffer, 0);
-        _finalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _depthBufferTexture, 0);
+        _finalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.DepthBufferTexture, 0);
         _finalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _lightsTexture, 1);
         _finalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearRepeatSampler, _preparePrepareImageBasedLightingPass.PrefilteredCubeTexture, 2);
         
@@ -1042,9 +949,9 @@ internal class Renderer : IRenderer
 
         var T = m * MathF.Pow(x / m, c) + b;
         var s = p - (p - s1) * MathF.Exp(cP * (x - s0));
-        var lbow = m + a * (x - m);
+        var elbow = m + a * (x - m);
 
-        return T * w0 + lbow * w1 + s * w2;
+        return T * w0 + elbow * w1 + s * w2;
     }
     
     private static Vector3 Uchimura(Vector3 x, float p, float a, float m, float l, float c, float b)

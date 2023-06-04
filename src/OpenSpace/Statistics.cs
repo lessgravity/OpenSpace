@@ -9,4 +9,6 @@ internal sealed class Statistics : IStatistics
     public double PreRenderClearMeshDuration { get; set; }
     
     public int PreRenderMeshCount { get; set; }
+    
+    public long UpdateTransformSystemDuration { get; set; }
 }

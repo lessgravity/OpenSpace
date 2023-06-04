@@ -16,13 +16,13 @@ public class EntityWorld : IEntityWorld
     private readonly TransformSystem _transformSystem;
     private readonly UpdateCameraSystem _updateCameraSystem;
 
-    public EntityWorld(IPhysicsWorld physicsWorld, ICamera camera)
+    public EntityWorld(IPhysicsWorld physicsWorld, ICamera camera, IStatistics statistics)
     {
         _componentsByType = new Dictionary<Type, List<Component>>();
         _entities = new Dictionary<EntityId, Entity>();
         _nextEntityId = 0;
 
-        _transformSystem = new TransformSystem(this, physicsWorld);
+        _transformSystem = new TransformSystem(this, physicsWorld, statistics);
         _updateCameraSystem = new UpdateCameraSystem(this, camera);
     }
     

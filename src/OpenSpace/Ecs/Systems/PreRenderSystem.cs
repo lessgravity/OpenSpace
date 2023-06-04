@@ -38,12 +38,12 @@ public class PreRenderSystem : ISystem
         var sw = Stopwatch.StartNew();
         _renderer.ClearMeshInstances();
         sw.Stop();
-        _statistics.PreRenderClearMeshDuration = sw.Elapsed.TotalMicroseconds;
+        _statistics.PreRenderClearMeshDuration = sw.Elapsed.TotalMilliseconds;
         
         sw.Restart();
         var entities = _entityWorld.GetEntitiesWithComponents<ModelRendererComponent, TransformComponent>();
         sw.Stop();
-        _statistics.PreRenderGetEntitiesDuration = sw.Elapsed.TotalMicroseconds;
+        _statistics.PreRenderGetEntitiesDuration = sw.Elapsed.TotalMilliseconds;
 
         var viewFrustum = BoundingFrustum.FromCamera(
             _camera.Position,
@@ -71,7 +71,7 @@ public class PreRenderSystem : ISystem
 
             var pooledMeshes = model
                 .ModelMeshes
-                .Where(meshPrimitive => viewFrustum.Contains(modelRenderer.BoundingBox.Value) != ContainmentType.Disjoint)
+                //.Where(meshPrimitive => viewFrustum.Contains(modelRenderer.BoundingBox.Value) != ContainmentType.Disjoint)
                 .Select(meshPrimitive => _renderer.GetOrAddMeshPrimitive(meshPrimitive.MeshPrimitive));
             foreach (var pooledMesh in pooledMeshes)
             {
@@ -81,7 +81,7 @@ public class PreRenderSystem : ISystem
             }            
         }
         sw.Stop();
-        _statistics.PreRenderAddMeshDuration = sw.Elapsed.TotalMicroseconds;
+        _statistics.PreRenderAddMeshDuration = sw.Elapsed.TotalMilliseconds;
     }
 
     private BoundingBox CalculateBoundingBox(Model model, TransformComponent transformComponent)

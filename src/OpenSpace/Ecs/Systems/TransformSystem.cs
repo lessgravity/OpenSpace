@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using OpenSpace.Ecs.Components;
@@ -9,17 +10,19 @@ public class TransformSystem : ISystem
 {
     private readonly IEntityWorld _entityWorld;
     private readonly IPhysicsWorld _physicsWorld;
+    private readonly IStatistics _statistics;
 
-    public TransformSystem(IEntityWorld entityWorld, IPhysicsWorld physicsWorld)
+    public TransformSystem(IEntityWorld entityWorld, IPhysicsWorld physicsWorld, IStatistics statistics)
     {
         _entityWorld = entityWorld;
         _physicsWorld = physicsWorld;
-
+        _statistics = statistics;
     }
+    
     public void Update(float deltaTime)
     {
+        var sw = Stopwatch.StartNew();
         var entities = _entityWorld.GetEntitiesWithComponents<TransformComponent>();
-
         var entitiesSpan = CollectionsMarshal.AsSpan(entities);
         ref var entityRef = ref MemoryMarshal.GetReference(entitiesSpan);
         for (var i = 0; i < entitiesSpan.Length; i++)
@@ -38,5 +41,7 @@ public class TransformSystem : ISystem
 
             entity.UpdateTransforms();
         }
+        sw.Stop();
+        _statistics.UpdateTransformSystemDuration = sw.ElapsedMilliseconds;
     }
 }

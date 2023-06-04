@@ -9,4 +9,6 @@ public interface IStatistics
     double PreRenderClearMeshDuration { get; set; }
 
     int PreRenderMeshCount { get; set; }
+
+    long UpdateTransformSystemDuration { get; set; }
 }

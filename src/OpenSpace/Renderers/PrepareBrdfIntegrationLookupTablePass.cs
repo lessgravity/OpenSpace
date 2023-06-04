@@ -4,16 +4,16 @@ using Serilog;
 
 namespace OpenSpace.Renderers;
 
-internal class CreateBrdfIntegrationLookupTablePass : IRenderPass
+internal class PrepareBrdfIntegrationLookupTablePass : IRenderPass
 {
     private readonly ILogger _logger;
     private readonly IGraphicsContext _graphicsContext;
     private IGraphicsPipeline? _brdfIntegrationLutGraphicsPipeline;
     private FramebufferDescriptor _framebufferDescriptor;
     
-    public CreateBrdfIntegrationLookupTablePass(ILogger logger, IGraphicsContext graphicsContext)
+    public PrepareBrdfIntegrationLookupTablePass(ILogger logger, IGraphicsContext graphicsContext)
     {
-        _logger = logger.ForContext<CreateBrdfIntegrationLookupTablePass>();
+        _logger = logger.ForContext<PrepareBrdfIntegrationLookupTablePass>();
         _graphicsContext = graphicsContext;
     }
 

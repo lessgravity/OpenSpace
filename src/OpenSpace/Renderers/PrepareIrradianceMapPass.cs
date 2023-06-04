@@ -5,7 +5,7 @@ using Serilog;
 
 namespace OpenSpace.Renderers;
 
-internal class CreateIrradianceMapPass : IDisposable
+internal class PrepareIrradianceMapPass : IDisposable
 {
     private readonly ILogger _logger;
     private readonly IGraphicsContext _graphicsContext;
@@ -13,9 +13,9 @@ internal class CreateIrradianceMapPass : IDisposable
     private ITexture? _environmentCubeTexture;
     private IComputePipeline? _computeIrradianceComputePipeline;
 
-    public CreateIrradianceMapPass(ILogger logger, IGraphicsContext graphicsContext)
+    public PrepareIrradianceMapPass(ILogger logger, IGraphicsContext graphicsContext)
     {
-        _logger = logger.ForContext<CreateIrradianceMapPass>();
+        _logger = logger.ForContext<PrepareIrradianceMapPass>();
         _graphicsContext = graphicsContext;
     }
 
@@ -81,8 +81,8 @@ internal class CreateIrradianceMapPass : IDisposable
             MemoryAccess.WriteOnly,
             IrradianceCubeTexture.TextureCreateDescriptor.Format);
         _computeIrradianceComputePipeline.Dispatch(groupX, groupY, groupZ);
-        //_graphicsContext.InsertMemoryBarrier(BarrierMask.ShaderImageAccess);
+        _graphicsContext.InsertMemoryBarrier(BarrierMask.ShaderImageAccess);
 
-        //IrradianceCubeTexture.GenerateMipmaps();
+        IrradianceCubeTexture.GenerateMipmaps();
     }
 }

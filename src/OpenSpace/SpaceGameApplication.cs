@@ -177,10 +177,12 @@ internal sealed class SpaceGameApplication : GameApplication
                 if (ImGui.Begin("Frametime"))
                 {
                     _frameTimePlot.Draw((float)_metrics.AverageFrameTime);
-                    ImGui.TextUnformatted($"PreRender.Clear: {_statistics.PreRenderClearMeshDuration:F2} us");
-                    ImGui.TextUnformatted($"PreRender.GetEntities: {_statistics.PreRenderGetEntitiesDuration:F2} us");
-                    ImGui.TextUnformatted($"PreRender.AddMesh: {_statistics.PreRenderAddMeshDuration:F2} us");
+                    ImGui.TextUnformatted($"PreRender.Clear: {_statistics.PreRenderClearMeshDuration:F2} ms");
+                    ImGui.TextUnformatted($"PreRender.GetEntities: {_statistics.PreRenderGetEntitiesDuration:F2} ms");
+                    ImGui.TextUnformatted($"PreRender.AddMesh: {_statistics.PreRenderAddMeshDuration:F2} ms");
                     ImGui.TextUnformatted($"PreRender.MeshCount: {_statistics.PreRenderMeshCount}");
+                    ImGui.Separator();
+                    ImGui.TextUnformatted($"TransformUpdate: {_statistics.UpdateTransformSystemDuration} ms");
                     ImGui.End();
                 }
 
@@ -307,15 +309,16 @@ internal sealed class SpaceGameApplication : GameApplication
 
     private bool LoadMeshes()
     {
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/material_test_shadow_casting_on_metal_materials/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/aztec_temple/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Bistro/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/IntelSponza/NewSponza_Main_glTF_002.gltf");
-        //_modelLibrary.AddModelFromFile("Curtains", "Data/Props/IntelSponzaCurtains/NewSponza_Curtains_glTF.gltf");
+        _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/material_test_shadow_casting_on_metal_materials/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/eas_agamemnon/scene.gltf");
-        _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr2/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/someone-crate/scene.gltf");        
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Sponza/Sponza.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/venice_mask/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/sci-fi_hallway/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/waterbottle/WaterBottle.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Small_City_LVL/Small_City_LVL.gltf");
         /*
         _modelLibrary.AddModelFromFile("SM_Asteroid01", "Data/Props/Asteroids/Asteroid01/SM_Asteroid01.gltf");
         _modelLibrary.AddModelFromFile("SM_Asteroid02", "Data/Props/Asteroids/Asteroid02/SM_Asteroid02.gltf");
@@ -330,10 +333,11 @@ internal sealed class SpaceGameApplication : GameApplication
         */
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/SunTemple/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/mira_up/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/merge_cube/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/wk7_unit_blocks_advanced_huth_will/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/waterbottle/WaterBottle.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/FlightHelmet/FlightHelmet.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/DamagedHelmet/DamagedHelmet.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/x_sphere_sci-fi/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Skull/SM_Skull_Optimized_point2.gltf");
         
         var defaultPbrMaterial  = new Material("M_Test_Pbr")
@@ -353,7 +357,6 @@ internal sealed class SpaceGameApplication : GameApplication
         _materialLibrary.AddMaterial(defaultPbrMaterial);
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Default/SM_Cube.gltf");
         
-        
         var model = _modelLibrary.GetModelByName("SM_Kentaur");
         if (model == null)
         {
@@ -361,7 +364,11 @@ internal sealed class SpaceGameApplication : GameApplication
         }
         
         var entity = _entityWorld.CreateEntity(model.Name);
-        _entityWorld.AddComponent(entity, new TransformComponent() { LocalScale = new Vector3(1.00f) });
+        _entityWorld.AddComponent(entity, new TransformComponent
+        {
+            LocalPosition = new Vector3(0, -1, 0),
+            LocalScale = new Vector3(0.03f)
+        });
         _entityWorld.AddComponent(entity, new ModelRendererComponent { Model = model });
 
         /*
@@ -392,8 +399,8 @@ internal sealed class SpaceGameApplication : GameApplication
         }
         */
         
-        _renderer.AddDirectionalLight(new Vector3(6, -2, 6), Color.White.ToVector3(), 3.5f, new Vector2(32, 32), 1, 64, true, 0);
-        _renderer.AddDirectionalLight(new Vector3(-1, -7, -1), Color.White.ToVector3(), 9f, new Vector2(64, 64), 1, 64, true, 1);
+        //_renderer.AddDirectionalLight(new Vector3(6, -2, 6), Color.White.ToVector3(), 3.5f, new Vector2(32, 32), 1, 64, true, 0);
+        //_renderer.AddDirectionalLight(new Vector3(-1, -7, -1), Color.White.ToVector3(), 9f, new Vector2(64, 64), 1, 64, true, 1);
         
         //_renderer.AddSpotLight(new Vector3(0, 10, -3), -Vector3.UnitY, Color.Red.ToVector3(), 100, 2, 12.5f, 17.5f);
         //_renderer.AddPointLight(new Vector3(0, 1, -3), Color.Teal.ToVector3(), 170);

@@ -6,23 +6,25 @@ namespace OpenSpace.Renderers;
 internal class PrepareImageBasedLightingPass : IRenderPass
 {
     private readonly IGraphicsContext _graphicsContext;
-    private readonly CreateBrdfIntegrationLookupTablePass _createBrdfIntegrationLookupTablePass;
-    private readonly CreatePrefilteredEnvironmentMapPass _createPrefilteredEnvironmentMapPass;
-    private readonly CreateIrradianceMapPass _createIrradianceMapPass;
+    private readonly PrepareBrdfIntegrationLookupTablePass _prepareBrdfIntegrationLookupTablePass;
+    private readonly PreparePrefilteredEnvironmentMapPass _preparePrefilteredEnvironmentMapPass;
+    private readonly PrepareIrradianceMapPass _prepareIrradianceMapPass;
 
     public PrepareImageBasedLightingPass(ILogger logger, IGraphicsContext graphicsContext)
     {
         _graphicsContext = graphicsContext;
-        _createBrdfIntegrationLookupTablePass = new CreateBrdfIntegrationLookupTablePass(logger, graphicsContext);
-        _createPrefilteredEnvironmentMapPass = new CreatePrefilteredEnvironmentMapPass(logger, graphicsContext);
-        _createIrradianceMapPass = new CreateIrradianceMapPass(logger, graphicsContext);
+        _prepareBrdfIntegrationLookupTablePass = new PrepareBrdfIntegrationLookupTablePass(logger, graphicsContext);
+        _preparePrefilteredEnvironmentMapPass = new PreparePrefilteredEnvironmentMapPass(logger, graphicsContext);
+        _prepareIrradianceMapPass = new PrepareIrradianceMapPass(logger, graphicsContext);
     }
 
-    public ITexture? BrdfIntegrationLutTexture => _createBrdfIntegrationLookupTablePass.BrdfIntegrationLutTexture;
+    public ITexture? BrdfIntegrationLutTexture => _prepareBrdfIntegrationLookupTablePass.BrdfIntegrationLutTexture;
 
-    public ITexture? PrefilteredCubeTexture => _createPrefilteredEnvironmentMapPass.PrefilteredCubeTexture;
+    public ITexture? PrefilteredCubeTexture => _preparePrefilteredEnvironmentMapPass.PrefilteredCubeTexture;
 
-    public ITexture? IrradianceCubeTexture => _createIrradianceMapPass.IrradianceCubeTexture;
+    public uint PrefilteredCubeTextureMipLevels => _preparePrefilteredEnvironmentMapPass.PrefilteredCubeTextureMipLevels;
+
+    public ITexture? IrradianceCubeTexture => _prepareIrradianceMapPass.IrradianceCubeTexture;
 
     public ITexture? EnvironmentCubeTexture { get; private set; }
 
@@ -34,12 +36,12 @@ internal class PrepareImageBasedLightingPass : IRenderPass
             return false;
         }
         
-        if (!_createBrdfIntegrationLookupTablePass.Load(imageBasedLightingPassOptions.BrdfIntegrationLutDimension))
+        if (!_prepareBrdfIntegrationLookupTablePass.Load(imageBasedLightingPassOptions.BrdfIntegrationLutDimension))
         {
             return false;
         }
 
-        if (!_createPrefilteredEnvironmentMapPass.Load(
+        if (!_preparePrefilteredEnvironmentMapPass.Load(
                 imageBasedLightingPassOptions.PrefilterSize,
                 EnvironmentCubeTexture,
                 imageBasedLightingPassOptions.SkyboxName))
@@ -47,7 +49,7 @@ internal class PrepareImageBasedLightingPass : IRenderPass
             return false;
         }
 
-        if (!_createIrradianceMapPass.Load(
+        if (!_prepareIrradianceMapPass.Load(
                 imageBasedLightingPassOptions.IrradianceSize / 4,
                 EnvironmentCubeTexture,
                 imageBasedLightingPassOptions.SkyboxName))
@@ -60,17 +62,17 @@ internal class PrepareImageBasedLightingPass : IRenderPass
 
     public void Dispose()
     {
-        _createBrdfIntegrationLookupTablePass?.Dispose();
-        _createPrefilteredEnvironmentMapPass?.Dispose();
-        _createIrradianceMapPass?.Dispose();
+        _prepareBrdfIntegrationLookupTablePass?.Dispose();
+        _preparePrefilteredEnvironmentMapPass?.Dispose();
+        _prepareIrradianceMapPass?.Dispose();
         EnvironmentCubeTexture?.Dispose();
     }
 
     public void Render()
     {
-        _createBrdfIntegrationLookupTablePass.Render();
-        _createPrefilteredEnvironmentMapPass.Render();
-        _createIrradianceMapPass.Render();
+        _prepareBrdfIntegrationLookupTablePass.Render();
+        _preparePrefilteredEnvironmentMapPass.Render();
+        _prepareIrradianceMapPass.Render();
     }
     
     private ITexture? LoadSkybox(string skyboxName)

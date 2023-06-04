@@ -5,7 +5,7 @@ using Serilog;
 
 namespace OpenSpace.Renderers;
 
-internal class CreatePrefilteredEnvironmentMapPass : IRenderPass
+internal class PreparePrefilteredEnvironmentMapPass : IRenderPass
 {
     private readonly ILogger _logger;
     private readonly IGraphicsContext _graphicsContext;
@@ -15,13 +15,15 @@ internal class CreatePrefilteredEnvironmentMapPass : IRenderPass
 
     private IComputePipeline? _prefilterComputePipeline;
 
-    public CreatePrefilteredEnvironmentMapPass(ILogger logger, IGraphicsContext graphicsContext)
+    public PreparePrefilteredEnvironmentMapPass(ILogger logger, IGraphicsContext graphicsContext)
     {
-        _logger = logger.ForContext<CreatePrefilteredEnvironmentMapPass>();
+        _logger = logger.ForContext<PreparePrefilteredEnvironmentMapPass>();
         _graphicsContext = graphicsContext;
     }
 
     public ITexture? PrefilteredCubeTexture { get; private set; }
+    
+    public uint PrefilteredCubeTextureMipLevels { get; private set; }
 
     public void Dispose()
     {
@@ -51,6 +53,7 @@ internal class CreatePrefilteredEnvironmentMapPass : IRenderPass
             TextureSampleCount = TextureSampleCount.OneSample
         };
         PrefilteredCubeTexture = _graphicsContext.CreateTexture(_prefilteredCubeTextureCreateDescriptor);
+        PrefilteredCubeTextureMipLevels = _prefilteredCubeTextureCreateDescriptor.MipLevels;
         
         var prefilterComputePipelineResult = _graphicsContext.CreateComputePipelineBuilder()
             .WithShaderFromFile("Shaders/Skybox.Prefilter.cs.glsl")
