@@ -337,7 +337,7 @@ public static class ToGLExtensions
     {
         return interpolationFilter switch
         {
-            TextureInterpolationFilter.Default => GL.Filter.Nearest,
+            TextureInterpolationFilter.Default => GL.Filter.Linear,
             TextureInterpolationFilter.Linear => GL.Filter.Linear,
             TextureInterpolationFilter.Nearest => GL.Filter.Nearest,
             _ => throw new ArgumentOutOfRangeException(nameof(interpolationFilter), interpolationFilter, null)
@@ -348,7 +348,7 @@ public static class ToGLExtensions
     {
         return mipmapFilter switch
         {
-            TextureMipmapFilter.Default => GL.Filter.Nearest,
+            TextureMipmapFilter.Default => GL.Filter.LinearMipmapLinear,
             TextureMipmapFilter.Linear => GL.Filter.Linear,
             TextureMipmapFilter.LinearMipmapLinear => GL.Filter.LinearMipmapLinear,
             TextureMipmapFilter.LinearMipmapNearest => GL.Filter.LinearMipmapNearest,
