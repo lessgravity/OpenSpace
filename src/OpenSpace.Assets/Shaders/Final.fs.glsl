@@ -54,7 +54,7 @@ vec3 uchimura(vec3 x) {
     return uchimura(x, P, a, m, l, c, b);
 }
 
-#define FINAL_TONEMAP 0
+#define FINAL_TONEMAP 1
 
 vec3 tonemap(vec3 x)
 {
@@ -72,7 +72,7 @@ void main()
     vec3 gamma = vec3(1.0 / uchimuraSettings.Gamma);
     if (depth == 1.0)
     {
-        vec3 radiance = tonemap(textureLod(s_skybox, v_sky_ray, 2).rgb);
+        vec3 radiance = tonemap(textureLod(s_skybox, v_sky_ray, 1).rgb);
         if (uchimuraSettings.CorrectGamma)
         {
             o_color = vec4(pow(radiance, gamma), 1.0);            

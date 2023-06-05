@@ -309,16 +309,20 @@ internal sealed class SpaceGameApplication : GameApplication
 
     private bool LoadMeshes()
     {
-        _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/material_test_shadow_casting_on_metal_materials/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/material_test_shadow_casting_on_metal_materials/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/eas_agamemnon/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr2/scene.gltf");
+        _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr2/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/someone-crate/scene.gltf");        
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Sponza/Sponza.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/venice_mask/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/sci-fi_hallway/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/waterbottle/WaterBottle.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Small_City_LVL/Small_City_LVL.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/shader_ball_jl_01.glb");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/material_ball_in_3d-coat.glb");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/iridescent__shader__blender.glb");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/apollo_material_ball.glb");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/3d_material_ball.glb");
         /*
         _modelLibrary.AddModelFromFile("SM_Asteroid01", "Data/Props/Asteroids/Asteroid01/SM_Asteroid01.gltf");
         _modelLibrary.AddModelFromFile("SM_Asteroid02", "Data/Props/Asteroids/Asteroid02/SM_Asteroid02.gltf");
@@ -367,7 +371,7 @@ internal sealed class SpaceGameApplication : GameApplication
         _entityWorld.AddComponent(entity, new TransformComponent
         {
             LocalPosition = new Vector3(0, -1, 0),
-            LocalScale = new Vector3(0.03f)
+            LocalScale = new Vector3(1.05f)
         });
         _entityWorld.AddComponent(entity, new ModelRendererComponent { Model = model });
 

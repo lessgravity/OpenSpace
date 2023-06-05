@@ -309,9 +309,9 @@ vec3 GetIblContribution(PbrInfo pbrInputs, vec3 n, vec3 reflection)
 	float lod = (pbrInputs.PerceptualRoughness * lightPassParameters.PrefilteredCubeMipLevels);
 	// retrieve a scale and bias to F0. See [1], Figure 3
 	vec3 brdf = (texture(s_lut_brdf, vec2(pbrInputs.NdotV, 1.0 - pbrInputs.PerceptualRoughness))).rgb;
-	vec3 diffuseLight = SrgbToLinear(Tonemap(texture(s_irradiance, n))).rgb;
+	vec3 diffuseLight = texture(s_irradiance, n).rgb;
 
-	vec3 specularLight = SrgbToLinear(Tonemap(textureLod(s_environment_prefiltered, reflection, lod))).rgb;
+	vec3 specularLight = textureLod(s_environment_prefiltered, reflection, lod).rgb;
 
 	vec3 diffuse = diffuseLight * pbrInputs.DiffuseColor;
 	vec3 specular = specularLight * (pbrInputs.SpecularColor * brdf.x + brdf.y);
@@ -380,11 +380,11 @@ void main()
     mat4 inverseViewProjection = inverse(cameraInformation.ProjectionMatrix * cameraInformation.ViewMatrix);
     vec3 world_position = ReconstructFragmentWorldPositionFromDepth(depth, cameraInformation.Viewport.xy, inverseViewProjection);
     
-    vec4 albedo = SrgbToLinear(textureLod(s_albedo, v_uv, 0));
+    vec4 albedo = textureLod(s_albedo, v_uv, 0);
     vec3 baseColor = albedo.rgb;
     vec4 normals = textureLod(s_normal, v_uv, 0);
     vec4 material = textureLod(s_material, v_uv, 0);
-    vec4 emissive = SrgbToLinear(textureLod(s_emissive, v_uv, 0));
+    vec4 emissive = textureLod(s_emissive, v_uv, 0);
 
     vec3 v = normalize(cameraInformation.CameraPosition.xyz - world_position);
     vec3 normal = normalize(normals.rgb);
@@ -413,7 +413,7 @@ void main()
 	vec3 l = normalize(globalLights.Lights[0].Direction.xyz);
 	vec3 h = normalize(l + v);
 	vec3 reflection = -normalize(reflect(v, normal));
-	reflection.y *= -1.0f;
+	//reflection.y *= -1.0f;
 
 	float NdotL = clamp(dot(normal, l), 0.001, 1.0);
 	float NdotV = clamp(abs(dot(normal, v)), 0.001, 1.0);
@@ -449,7 +449,7 @@ void main()
 	// Calculate lighting contribution from image based lighting source (IBL)
 	color += GetIblContribution(pbrInputs, normal, reflection);
 	
-    color = mix(color, color * ambientOcclusion, 1.0f);
+    color = mix(color, color /* ambientOcclusion*/, 1.0f);
 
     color += emissive.rgb;
     
