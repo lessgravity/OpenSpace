@@ -245,6 +245,8 @@ public class Application : IApplication
             _logger.Error("{Category}: Unable to create window", "Glfw");
             return false;
         }
+        
+        Glfw.SwapBuffers(_windowHandle);
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
