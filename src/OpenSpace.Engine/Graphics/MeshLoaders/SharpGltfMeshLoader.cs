@@ -190,8 +190,7 @@ internal sealed class SharpGltfMeshLoader : IMeshLoader
             }
             else if (materialChannel.Key == "Occlusion")
             {
-                material.OcclusionFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "OcclusionStrength")?.Value ?? 0.0f;
-                // OcclusionStrength
+                material.OcclusionStrength = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "OcclusionStrength")?.Value ?? 1.0f;
                 
                 if (materialChannel.Texture?.PrimaryImage != null)
                 {

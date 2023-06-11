@@ -13,7 +13,7 @@ public record Material(string Name)
     private float _roughnessFactor;
     private Vector3 _specularFactor;
     private float _glossinessFactor;
-    private float _occlusionFactor = 1.0f;
+    private float _occlusionStrength = 1.0f;
     private Color4 _emissiveColor;
     private Color4 _baseColor;
     private Color4 _specularColor;
@@ -38,14 +38,14 @@ public record Material(string Name)
 
     public bool IsDirty => _isDirty;
 
-    public float OcclusionFactor
+    public float OcclusionStrength
     {
-        get => _occlusionFactor;
+        get => _occlusionStrength;
         set
         {
-            if (MathF.Abs(_occlusionFactor - value) > 0.0001f)
+            if (MathF.Abs(_occlusionStrength - value) > 0.0001f)
             {
-                _occlusionFactor = value;
+                _occlusionStrength = value;
                 _isDirty = true;
             }
         }
@@ -281,7 +281,7 @@ public record Material(string Name)
                     BaseColorTexture.MakeResident();
                 }
                 textures.Add(BaseColorTextureDataName, BaseColorTexture);
-                logger.Debug("App: Loading baseColor texture {TextureName} took {LoadingTime}ms", BaseColorTextureDataName, sw.ElapsedMilliseconds);
+                logger.Debug("{Category}: Loading baseColor texture {TextureName} took {LoadingTime}ms", "Material", BaseColorTextureDataName, sw.ElapsedMilliseconds);
             }
         }
         if (!string.IsNullOrEmpty(NormalTextureDataName) && !textures.TryGetValue(NormalTextureDataName, out NormalTexture))
@@ -306,7 +306,7 @@ public record Material(string Name)
                 }
 
                 textures.Add(NormalTextureDataName, NormalTexture);
-                logger.Debug("App: Loading normal texture {TextureName} took {LoadingTime}ms", NormalTextureDataName, sw.ElapsedMilliseconds);
+                logger.Debug("{Category}: Loading normal texture {TextureName} took {LoadingTime}ms", "Material", NormalTextureDataName, sw.ElapsedMilliseconds);
             }
         }
 
@@ -332,7 +332,7 @@ public record Material(string Name)
                 }
 
                 textures.Add(MetalnessRoughnessTextureDataName, MetalnessRoughnessTexture);
-                logger.Debug("App: Loading metalnessRoughness texture {TextureName} took {LoadingTime}ms", MetalnessRoughnessTextureDataName, sw.ElapsedMilliseconds);
+                logger.Debug("{Category}: Loading metalnessRoughness texture {TextureName} took {LoadingTime}ms", "Material", MetalnessRoughnessTextureDataName, sw.ElapsedMilliseconds);
             }
         }
 
@@ -357,7 +357,7 @@ public record Material(string Name)
                     SpecularTexture.MakeResident();
                 }
                 textures.Add(SpecularTextureDataName, SpecularTexture);
-                logger.Debug("App: Loading specular texture {TextureName} took {LoadingTime}ms", SpecularTextureDataName, sw.ElapsedMilliseconds);
+                logger.Debug("{Category}: Loading specular texture {TextureName} took {LoadingTime}ms", "Material", SpecularTextureDataName, sw.ElapsedMilliseconds);
             }
         }
         
@@ -383,7 +383,7 @@ public record Material(string Name)
                 }
 
                 textures.Add(OcclusionTextureDataName, OcclusionTexture);
-                logger.Debug("App: Loading occlusion texture {TextureName} took {LoadingTime}ms", OcclusionTextureDataName, sw.ElapsedMilliseconds);
+                logger.Debug("{Category}: Loading occlusion texture {TextureName} took {LoadingTime}ms", "Material", OcclusionTextureDataName, sw.ElapsedMilliseconds);
             }
         }
         
@@ -409,7 +409,7 @@ public record Material(string Name)
                 }
 
                 textures.Add(EmissiveTextureDataName, EmissiveTexture);
-                logger.Debug("App: Loading emissive texture {TextureName} took {LoadingTime}ms", EmissiveTextureDataName, sw.ElapsedMilliseconds);
+                logger.Debug("{Category}: Loading emissive texture {TextureName} took {LoadingTime}ms", "Material", EmissiveTextureDataName, sw.ElapsedMilliseconds);
             }
         }
 
