@@ -72,12 +72,6 @@ internal sealed class SharpGltfMeshLoader : IMeshLoader
 
     private Material? ProcessMaterial(SharpGLTF.Schema2.Material gltfMaterial)
     {
-        // BaseColor
-        // MetallicRoughness
-        // Normal
-        // Occlusion
-        // Emissive
-
         var materialName = gltfMaterial.Name ?? Guid.NewGuid().ToString();
 
         if (_materialLibrary.Exists(materialName))
@@ -198,7 +192,6 @@ internal sealed class SharpGltfMeshLoader : IMeshLoader
                         Path.GetFileNameWithoutExtension(materialChannel.Texture?.PrimaryImage?.Content.SourcePath) ??
                         Guid.NewGuid().ToString();
                     if (File.Exists(materialChannel.Texture?.PrimaryImage?.Content.SourcePath))
-                    //if (materialChannel.Texture!.PrimaryImage!.Content.IsEmpty)
                     {
                         material.OcclusionTextureFilePath = materialChannel.Texture?.PrimaryImage?.Content.SourcePath;
                     }
@@ -246,12 +239,6 @@ internal sealed class SharpGltfMeshLoader : IMeshLoader
 
     private void ProcessNode(ICollection<MeshPrimitive> meshPrimitives, Node node, ICollection<Material> materials)
     {
-        if (node.Mesh == null)
-        {
-            _logger.Debug("{Category}: No mesh found in node {NodeName}", nameof(SharpGltfMeshLoader), node.Name);
-            return;
-        }
-
         foreach (var primitive in node.Mesh.Primitives)
         {
             if (primitive?.VertexAccessors?.Keys == null)
@@ -271,13 +258,20 @@ internal sealed class SharpGltfMeshLoader : IMeshLoader
                 : meshPrimitives.Any(md => md.MeshName == node.Name)
                     ? node.Name + "_" + Guid.NewGuid()
                     : node.Name;
+            
+            var positions = primitive.VertexAccessors.GetValueOrDefault("POSITION").AsSpan<Vector3>();
+            if (positions.Length == 0)
+            {
+                _logger.Error("{Category}: Mesh primitive {MeshName} has no valid vertex data", nameof(SharpGltfMeshLoader), meshName);
+                continue;
+            }      
+            
             var meshPrimitive = new MeshPrimitive(meshName);
             meshPrimitive.Transform = node.WorldMatrix.ToMatrix();
             meshPrimitive.MaterialName = primitive.Material?.Name ?? (primitive.Material == null ? "M_NotFound" : materials.ElementAt(primitive.Material.LogicalIndex)?.Name) ?? "M_NotFound";
             
             var vertexType = GetVertexTypeFromVertexAccessorNames(primitive!.VertexAccessors!.Keys.ToList());
 
-            var positions = primitive.VertexAccessors.GetValueOrDefault("POSITION").AsSpan<Vector3>();
             meshPrimitive.BoundingBox = BoundingBox.FromPoints(positions.ToArray());
             
             var normals = primitive.VertexAccessors.GetValueOrDefault("NORMAL").AsSpan<Vector3>();
