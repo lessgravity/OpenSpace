@@ -110,6 +110,7 @@ struct PbrInfo
 #define MANUAL_SRGB 1
 
 #include <Module.ReconstructFragmentWorldPositionFromDepth.glsl>
+#include <Module.Hammersley.glsl>
 
 const float EPSILON = 1.17549435E-38;
 const int PCF_SAMPLES = 64;
@@ -369,6 +370,57 @@ float MicrofacetDistribution(PbrInfo pbrInputs)
 	return roughnessSq / (M_PI * f * f);
 }
 
+vec3 approximate_specular_ibl(vec3 specular_color, float roughness, vec3 n, vec3 v)
+{
+    float n_dot_v = max(0.0, dot(n, v));
+    vec3 r = reflect(-v, n);
+    vec3 prefiltered_color = textureLod(s_environment_prefiltered, r, roughness * 10.0).rgb;
+    vec2 brdf = texture(s_lut_brdf, vec2(roughness, n_dot_v)).rg;
+    return prefiltered_color * (specular_color * brdf.x + brdf.y);
+}
+
+float ShadowFunction(GpuGlobalLight light, vec3 worldPosition, vec3 normal)
+{
+    vec4 shadowUv = light.ProjectionMatrix * light.ViewMatrix * vec4(worldPosition, 1.0);
+    shadowUv = vec4(shadowUv.xyz * 0.5 + 0.5, shadowUv.w);
+
+    if (any(lessThan(shadowUv.xyz, vec3(0))) || any(greaterThan(shadowUv.xyz, vec3(1))))
+    {
+        return 0.5;
+    }
+
+    float nDotL = max(0.0, dot(normalize(light.Direction.xyz), normal));
+
+    float bias = (1.0 - nDotL) * shadowSettings.LinearBias;
+    bias += shadowSettings.ConstantBias;
+
+    ivec2 uvNoise = ivec2(gl_FragCoord.xy) % textureSize(s_blue_noise, 0);
+    vec4 noiseSample = texelFetch(s_blue_noise, uvNoise, 0);
+
+    float accumShadow = 0;
+    for (uint i = 0; i < shadowSettings.Samples; i++)
+    {
+        vec2 xi = mod(Hammersley(i, shadowSettings.Samples) + noiseSample.xy, 1);
+        float r = xi.x * shadowSettings.RMax;
+        float theta = xi.y * 2 * M_TAU;
+        float shadowDepth = texture(sampler2D(light.ShadowMapTexture), shadowUv.xy + vec2(r * cos(theta), r * sin(theta))).r;
+        if (shadowDepth >= shadowUv.z - bias)
+        {
+            accumShadow += shadowSettings.AccumFactor;
+        }
+    }
+    
+    float notInShadowAmount = accumShadow / shadowSettings.Samples;
+    //return vec4(accumShadow);
+    return notInShadowAmount;
+    //return vec4(vec3(shadowDepth), 1.0);
+    //return vec4(vec3(bias) * light.Color.rgb * 3, 1.0);
+    //return vec4(noiseSample.xyz, 1.0);
+    //return vec4(shadowUv.xy, 0.0, 1.0);
+    //return vec4(light.Color.xyz, 1.0);
+    //return vec4(noiseSample.xyz, 1.0);
+}
+
 void main()
 {
     float depth = textureLod(s_depth, v_uv, 0).r;
@@ -378,7 +430,7 @@ void main()
     }
 
     mat4 inverseViewProjection = inverse(cameraInformation.ProjectionMatrix * cameraInformation.ViewMatrix);
-    vec3 world_position = ReconstructFragmentWorldPositionFromDepth(depth, cameraInformation.Viewport.xy, inverseViewProjection);
+    vec3 worldPosition = ReconstructFragmentWorldPositionFromDepth(depth, cameraInformation.Viewport.xy, inverseViewProjection);
     
     vec4 albedo = textureLod(s_albedo, v_uv, 0);
     vec3 baseColor = albedo.rgb;
@@ -386,7 +438,7 @@ void main()
     vec4 material = textureLod(s_material, v_uv, 0);
     vec4 emissive = textureLod(s_emissive, v_uv, 0);
 
-    vec3 v = normalize(cameraInformation.CameraPosition.xyz - world_position);
+    vec3 v = normalize(cameraInformation.CameraPosition.xyz - worldPosition);
     vec3 normal = normalize(normals.rgb);
    
     float ambientOcclusion = material.r;
@@ -408,50 +460,53 @@ void main()
 	float reflectance90 = clamp(reflectance * 25.0, 0.0, 1.0);
 	vec3 specularEnvironmentR0 = specularColor.rgb;
 	vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
-
-
-	vec3 l = normalize(globalLights.Lights[0].Direction.xyz);
-	vec3 h = normalize(l + v);
-	vec3 reflection = -normalize(reflect(v, normal));
-	//reflection.y *= -1.0f;
-
-	float NdotL = clamp(dot(normal, l), 0.001, 1.0);
-	float NdotV = clamp(abs(dot(normal, v)), 0.001, 1.0);
-	float NdotH = clamp(dot(normal, h), 0.0, 1.0);
-	float LdotH = clamp(dot(l, h), 0.0, 1.0);
-	float VdotH = clamp(dot(v, h), 0.0, 1.0);
+    float shadowFactor = 0.0;
+    vec3 color = vec3(0.0);
+    for (int i = 0; i < globalLights.Lights.length(); i++)
+    {
+        GpuGlobalLight globalLight = globalLights.Lights[i]; 
+        vec3 l = normalize(globalLight.Direction.xyz);
+        vec3 h = normalize(l + v);
+        vec3 reflection = -normalize(reflect(v, normal));
+    
+        float NdotL = clamp(dot(normal, l), 0.001, 1.0);
+        float NdotV = clamp(abs(dot(normal, v)), 0.001, 1.0);
+        float NdotH = clamp(dot(normal, h), 0.0, 1.0);
+        float LdotH = clamp(dot(l, h), 0.0, 1.0);
+        float VdotH = clamp(dot(v, h), 0.0, 1.0);
+        
+        PbrInfo pbrInputs = PbrInfo(
+            NdotL,
+            NdotV,
+            NdotH,
+            LdotH,
+            VdotH,
+            roughness,
+            metalness,
+            specularEnvironmentR0,
+            specularEnvironmentR90,
+            alphaRoughness,
+            diffuseColor,
+            specularColor
+        );
+        
+        vec3 F = SpecularReflection(pbrInputs);
+        float G = GeometricOcclusion(pbrInputs);
+        float D = MicrofacetDistribution(pbrInputs);
+    
+        // Calculation of analytical lighting contribution
+        vec3 diffuseContribution = (1.0 - F) * Diffuse(pbrInputs);
+        vec3 specularContribution = F * G * D / (4.0 * NdotL * NdotV);
+        // Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
+        color = NdotL * globalLight.Color.rgb * (diffuseContribution + specularContribution);
+    
+        shadowFactor = ShadowFunction(globalLight, worldPosition, normal);
+        color += GetIblContribution(pbrInputs, normal, reflection);
+        color *= vec3(shadowFactor);
+	}
 	
-	PbrInfo pbrInputs = PbrInfo(
-		NdotL,
-		NdotV,
-		NdotH,
-		LdotH,
-		VdotH,
-		roughness,
-		metalness,
-		specularEnvironmentR0,
-		specularEnvironmentR90,
-		alphaRoughness,
-		diffuseColor,
-		specularColor
-	);
-	
-	vec3 F = SpecularReflection(pbrInputs);
-	float G = GeometricOcclusion(pbrInputs);
-	float D = MicrofacetDistribution(pbrInputs);
-
-	// Calculation of analytical lighting contribution
-	vec3 diffuseContribution = (1.0 - F) * Diffuse(pbrInputs);
-	vec3 specularContribution = F * G * D / (4.0 * NdotL * NdotV);
-	// Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
-	vec3 color = NdotL * globalLights.Lights[0].Color.rgb * (diffuseContribution + specularContribution);
-
-	// Calculate lighting contribution from image based lighting source (IBL)
-	color += GetIblContribution(pbrInputs, normal, reflection);
-	
-    color = mix(color, color /* ambientOcclusion*/, 1.0f);
-
     color += emissive.rgb;
     
     o_value = vec4(color, 1.0);
 }
+

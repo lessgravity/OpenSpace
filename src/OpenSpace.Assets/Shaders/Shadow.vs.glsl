@@ -13,6 +13,10 @@ layout (binding = 2, std140) uniform GlobalLight
     mat4 ViewMatrix;
     vec4 Direction;
     vec4 Color;
+    uvec2 _padding1;
+    uvec2 _padding2;
+    uvec2 _padding3;
+    uvec2 _padding4;
 } globalLight;
 
 struct GpuModelMeshInstance
