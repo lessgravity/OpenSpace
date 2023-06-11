@@ -155,7 +155,7 @@ internal class Renderer : IRenderer
 
     public TextureView? LightsTexture => _lightsTextureView;
 
-    public ITexture? FirstGlobalLightShadowMap => _preparePrepareImageBasedLightingPass.EnvironmentCubeTexture;//_globalLights[0].ShadowMapTexture;
+    public ITexture? FirstGlobalLightShadowMap => _globalLights[0].ShadowMapTexture;
 
     public void Dispose()
     {
@@ -314,7 +314,7 @@ internal class Renderer : IRenderer
         _localLightsBuffer.AllocateStorage(32 * Marshal.SizeOf<GpuLocalLight>(), StorageAllocationFlags.Dynamic);
 
         _globalLightsBuffer = _graphicsContext.CreateShaderStorageBuffer<GpuGlobalLight>("GlobalLights");
-        _globalLightsBuffer.AllocateStorage(4 * Marshal.SizeOf<GpuGlobalLight>(), StorageAllocationFlags.Dynamic);
+        _globalLightsBuffer.AllocateStorage(2 * Marshal.SizeOf<GpuGlobalLight>(), StorageAllocationFlags.Dynamic);
 
         _shadowSettingsBuffer = _graphicsContext.CreateUniformBuffer<GpuShadowSettings>("ShadowSettings");
         _shadowSettingsBuffer.AllocateStorage(Marshal.SizeOf<GpuShadowSettings>(), StorageAllocationFlags.Dynamic);
@@ -348,7 +348,7 @@ internal class Renderer : IRenderer
             128, 
             1024, 
             256, 
-            "DigitalNuclearReactor");
+            "rye-field-sunset");
         if (!_preparePrepareImageBasedLightingPass.Load(imageBasedLightingPassOptions))
         {
             return false;
@@ -655,13 +655,13 @@ internal class Renderer : IRenderer
             .Build("LightsGlobalPass");
         if (lightsGlobalPassGraphicsPipelineResult.IsFailure)
         {
-            _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
+            _logger.Error("{Category}: Unable to build graphics pipeline. {Details}",
                 "LightsGlobalPass", lightsGlobalPassGraphicsPipelineResult.Error);
             return false;
         }
         _lightsGlobalPassGraphicsPipeline?.Dispose();
         _lightsGlobalPassGraphicsPipeline = lightsGlobalPassGraphicsPipelineResult.Value;
-        _logger.Debug("Renderer: Build pipeline {PipelineName}", _lightsGlobalPassGraphicsPipeline.Label);
+        _logger.Debug("{Category}: Pipeline built", _lightsGlobalPassGraphicsPipeline.Label);
         
         var lightsLocalPassGraphicsPipelineResult = _graphicsContext.CreateGraphicsPipelineBuilder()
             .WithShadersFromFiles(lightsLocalVertexShader, lightsLocalFragmentShader)
@@ -675,13 +675,13 @@ internal class Renderer : IRenderer
             .Build("LightsLocalPass");
         if (lightsLocalPassGraphicsPipelineResult.IsFailure)
         {
-            _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
+            _logger.Error("{Category}: Unable to build graphics pipeline. {Details}",
                 "LightsLocalPass", lightsLocalPassGraphicsPipelineResult.Error);
             return false;
         }
         _lightsLocalPassGraphicsPipeline?.Dispose();
         _lightsLocalPassGraphicsPipeline = lightsLocalPassGraphicsPipelineResult.Value;
-        _logger.Debug("Renderer: Build pipeline {PipelineName}", _lightsLocalPassGraphicsPipeline.Label);
+        _logger.Debug("{Category}: Pipeline built", _lightsLocalPassGraphicsPipeline.Label);
 
         var finalPassGraphicsPipelineResult = _graphicsContext.CreateGraphicsPipelineBuilder()
             .WithShadersFromFiles(finalVertexShader, finalFragmentShader)
@@ -695,13 +695,13 @@ internal class Renderer : IRenderer
             .Build("FinalPass");
         if (finalPassGraphicsPipelineResult.IsFailure)
         {
-            _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
+            _logger.Error("{Category}: Unable to build graphics pipeline. {Details}",
                 "FinalPass", finalPassGraphicsPipelineResult.Error);
             return false;
         }
         _finalPassGraphicsPipeline?.Dispose();
         _finalPassGraphicsPipeline = finalPassGraphicsPipelineResult.Value;
-        _logger.Debug("Renderer: Build pipeline {PipelineName}", _finalPassGraphicsPipeline.Label);
+        _logger.Debug("{Category}: Pipeline built", _finalPassGraphicsPipeline.Label);
 
         var shadowPassGraphicsPipelineResult = _graphicsContext.CreateGraphicsPipelineBuilder()
             .WithShadersFromFiles(globalShadowMapVertexShader, globalShadowMapFragmentShader)
@@ -714,13 +714,13 @@ internal class Renderer : IRenderer
             .Build("GlobalLightShadowPass");
         if (shadowPassGraphicsPipelineResult.IsFailure)
         {
-            _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
+            _logger.Error("{Category}: Unable to build graphics pipeline. {Details}",
                 "GlobalLightShadowPass", shadowPassGraphicsPipelineResult.Error);
             return false;
         }
         _shadowPassGraphicsPipeline?.Dispose();
         _shadowPassGraphicsPipeline = shadowPassGraphicsPipelineResult.Value;
-        _logger.Debug("Renderer: Build pipeline {PipelineName}", _shadowPassGraphicsPipeline.Label);
+        _logger.Debug("{Category}: Pipeline built", _shadowPassGraphicsPipeline.Label);
 
         return true;
     }
@@ -750,7 +750,7 @@ internal class Renderer : IRenderer
     {
         globalLight.ShadowMapTexture?.Dispose();
         globalLight.ShadowMapTexture = _graphicsContext.CreateTexture2D(width, height, Format.D16UNorm, $"Directional-Light-ShadowMap-{GetHashCode()}");
-        //globalLight.ShadowMapTexture.MakeResident(_linearMipmapLinearRepeatSampler);
+        globalLight.ShadowMapTexture.MakeResident(_linearMipmapLinearRepeatSampler);
 
         if (globalLight.ShadowMapFramebufferDescriptor != null)
         {
@@ -795,7 +795,7 @@ internal class Renderer : IRenderer
                 ProjectionMatrix = projectionMatrix,
                 ViewMatrix = viewMatrix,
                 Direction = new Vector4(globalLight.Direction, 1.0f/*globalLight.ShadowQuality*/),
-                Color = new Vector4(globalLight.Color, 1.0f)
+                Color = new Vector4(globalLight.Color, 1.0f),
             };
 
             globalLightBuffer.Update(gpuGlobalLight);
@@ -853,7 +853,6 @@ internal class Renderer : IRenderer
                 Color = new Vector4(globalLight.Color, globalLight.Intensity),
                 ShadowMapTextureHandle = globalLight.ShadowMapTexture.TextureHandle
             };
-
             _globalLightsBuffer.Update(gpuGlobalLight, i);
         }
         

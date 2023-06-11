@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using ImGuiNET;
@@ -313,16 +314,31 @@ internal sealed class SpaceGameApplication : GameApplication
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/eas_agamemnon/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr/scene.gltf");
         _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr2/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/corroded_metal_with_stripes_2k/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/DarkSideOfTheMoon/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_IntelSponza", "Data/Props/IntelSponza/NewSponza_Main_glTF_002.gltf");
+        //_modelLibrary.AddModelFromFile("SM_IntelSponza_Curtains", "Data/Props/IntelSponzaCurtains/NewSponza_Curtains_glTF.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/someone-crate/scene.gltf");        
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Sponza/Sponza.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/sci-fi_floor_panel/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/stylized_material_test/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/venice_mask/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/sci-fi_hallway/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Small_City_LVL/Small_City_LVL.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/shader_ball_jl_01.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/material_ball_in_3d-coat.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/iridescent__shader__blender.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/apollo_material_ball.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/3d_material_ball.glb");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/SunTemple/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/mira_up/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/wk7_unit_blocks_advanced_huth_will/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/waterbottle/WaterBottle.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/FlightHelmet/FlightHelmet.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/DamagedHelmet/DamagedHelmet.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/x_sphere_sci-fi/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Skull/SM_Skull_Optimized_point2.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/metalnessspecular_and_albedo/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/radar_robot_-_ngchipv/scene.gltf");
         /*
         _modelLibrary.AddModelFromFile("SM_Asteroid01", "Data/Props/Asteroids/Asteroid01/SM_Asteroid01.gltf");
         _modelLibrary.AddModelFromFile("SM_Asteroid02", "Data/Props/Asteroids/Asteroid02/SM_Asteroid02.gltf");
@@ -335,14 +351,6 @@ internal sealed class SpaceGameApplication : GameApplication
         _modelLibrary.AddModelFromFile("SM_Asteroid09", "Data/Props/Asteroids/Asteroid09/SM_Asteroid09.gltf");
         _modelLibrary.AddModelFromFile("SM_Asteroid10", "Data/Props/Asteroids/Asteroid10/SM_Asteroid10.gltf");
         */
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/SunTemple/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/mira_up/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/wk7_unit_blocks_advanced_huth_will/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/waterbottle/WaterBottle.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/FlightHelmet/FlightHelmet.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/DamagedHelmet/DamagedHelmet.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/x_sphere_sci-fi/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Skull/SM_Skull_Optimized_point2.gltf");
         
         var defaultPbrMaterial  = new Material("M_Test_Pbr")
         {
@@ -361,19 +369,36 @@ internal sealed class SpaceGameApplication : GameApplication
         _materialLibrary.AddMaterial(defaultPbrMaterial);
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Default/SM_Cube.gltf");
         
-        var model = _modelLibrary.GetModelByName("SM_Kentaur");
-        if (model == null)
+        var model1 = _modelLibrary.GetModelByName("SM_Kentaur");
+        //var model1 = _modelLibrary.GetModelByName("SM_IntelSponza");
+        if (model1 == null)
         {
             return false;
         }
         
-        var entity = _entityWorld.CreateEntity(model.Name);
-        _entityWorld.AddComponent(entity, new TransformComponent
+        var entity1 = _entityWorld.CreateEntity(model1.Name);
+        _entityWorld.AddComponent(entity1, new TransformComponent
         {
-            LocalPosition = new Vector3(0, -1, 0),
-            LocalScale = new Vector3(1.05f)
+            LocalPosition = new Vector3(0, 0, 0),
+            LocalScale = new Vector3(1.00f)
         });
-        _entityWorld.AddComponent(entity, new ModelRendererComponent { Model = model });
+        _entityWorld.AddComponent(entity1, new ModelRendererComponent { Model = model1 });
+        
+        /*
+        var model2 = _modelLibrary.GetModelByName("SM_IntelSponza_Curtains");
+        if (model2 == null)
+        {
+            return false;
+        }
+        
+        var entity2 = _entityWorld.CreateEntity(model2.Name);
+        _entityWorld.AddComponent(entity2, new TransformComponent
+        {
+            LocalPosition = new Vector3(0, 0, 0),
+            LocalScale = new Vector3(1.00f)
+        });
+        _entityWorld.AddComponent(entity2, new ModelRendererComponent { Model = model2 });
+        */
 
         /*
         var random = new Random();
@@ -403,8 +428,8 @@ internal sealed class SpaceGameApplication : GameApplication
         }
         */
         
-        //_renderer.AddDirectionalLight(new Vector3(6, -2, 6), Color.White.ToVector3(), 3.5f, new Vector2(32, 32), 1, 64, true, 0);
-        //_renderer.AddDirectionalLight(new Vector3(-1, -7, -1), Color.White.ToVector3(), 9f, new Vector2(64, 64), 1, 64, true, 1);
+        _renderer.AddDirectionalLight(new Vector3(6, -2, 6), Color.Teal.ToVector3(), 3f, new Vector2(32, 32), 1, 128, true, 0);
+        _renderer.AddDirectionalLight(new Vector3(-1, -7, -1), Color.Orange.ToVector3(), 4f, new Vector2(64, 64), 1, 64, true, 1);
         
         //_renderer.AddSpotLight(new Vector3(0, 10, -3), -Vector3.UnitY, Color.Red.ToVector3(), 100, 2, 12.5f, 17.5f);
         //_renderer.AddPointLight(new Vector3(0, 1, -3), Color.Teal.ToVector3(), 170);

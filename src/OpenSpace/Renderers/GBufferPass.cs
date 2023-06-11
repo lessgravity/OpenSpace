@@ -107,9 +107,11 @@ internal class GBufferPass : IDisposable
     {
         const string sceneDeferredVertexShader = "Shaders/SceneDeferred.vs.glsl";
         const string sceneDeferredFragmentShader = "Shaders/SceneDeferred.fs.glsl";
-        File.Copy(Path.Combine(sourcePath, sceneDeferredVertexShader), Path.Combine(destinationPath, sceneDeferredVertexShader), true);
-        File.Copy(Path.Combine(sourcePath, sceneDeferredFragmentShader), Path.Combine(destinationPath, sceneDeferredFragmentShader), true);
-        
+        File.Copy(Path.Combine(sourcePath, sceneDeferredVertexShader),
+            Path.Combine(destinationPath, sceneDeferredVertexShader), true);
+        File.Copy(Path.Combine(sourcePath, sceneDeferredFragmentShader),
+            Path.Combine(destinationPath, sceneDeferredFragmentShader), true);
+
         var gBufferGraphicsPipelineResult = _graphicsContext.CreateGraphicsPipelineBuilder()
             .WithShadersFromFiles(sceneDeferredVertexShader, sceneDeferredFragmentShader)
             .WithVertexInput(new VertexInputDescriptorBuilder()
@@ -122,17 +124,18 @@ internal class GBufferPass : IDisposable
             .WithFaceWinding(FaceWinding.CounterClockwise)
             .EnableCulling(CullMode.Back)
             .EnableDepthTest()
-            .Build("GBufferPass");
+            .Build(nameof(GBufferPass));
 
         if (gBufferGraphicsPipelineResult.IsFailure)
         {
-            _logger.Error("Renderer: Unable to build graphics pipeline {PipelineName}. {Details}",
-                "GBufferPass", gBufferGraphicsPipelineResult.Error);
+            _logger.Error("{Category}: Unable to build graphics pipeline {PipelineName}. {Details}",
+                nameof(GBufferPass), gBufferGraphicsPipelineResult.Error);
             return false;
         }
+
         _gBufferPassGraphicsPipeline?.Dispose();
         _gBufferPassGraphicsPipeline = gBufferGraphicsPipelineResult.Value;
-        _logger.Debug("Renderer: Build pipeline {PipelineName}", _gBufferPassGraphicsPipeline.Label);
+        _logger.Debug("{Category}: Pipeline built", _gBufferPassGraphicsPipeline.Label);
 
         return true;
     }
