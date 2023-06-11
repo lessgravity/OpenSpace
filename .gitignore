@@ -353,4 +353,7 @@ MigrationBackup/
 .idea/
 
 # Ignore Files in Asset Dir
-src/OpenSpace.Assets/Data/Props
+/src/OpenSpace.Assets/Data/Props/**
+!/src/OpenSpace.Assets/Data/Props/ReferencePbr2/scene.gltf
+!/src/OpenSpace.Assets/Data/Props/ReferencePbr2/scene.bin
+
