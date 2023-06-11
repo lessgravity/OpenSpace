@@ -139,8 +139,8 @@ internal sealed class SharpGltfMeshLoader : IMeshLoader
             }
             else if (materialChannel.Key == "MetallicRoughness")
             {
-                material.MetallicFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "MetallicFactor")?.Value ?? 0.0f;
-                material.RoughnessFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "RoughnessFactor")?.Value ?? 0.0f;
+                material.MetallicFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "MetallicFactor")?.Value ?? 1.0f;
+                material.RoughnessFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "RoughnessFactor")?.Value ?? 1.0f;
 
                 if (materialChannel.Texture?.PrimaryImage != null)
                 {
@@ -169,13 +169,13 @@ internal sealed class SharpGltfMeshLoader : IMeshLoader
             }
             else if (materialChannel.Key == "SpecularFactor")
             {
-                var specularFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "SpecularFactor")?.Value ?? 0.0f;
+                var specularFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "SpecularFactor")?.Value ?? 1.0f;
                 material.SpecularFactor = new Num.Vector3(specularFactor);
             }
             else if (materialChannel.Key == "SpecularGlossiness")
             {
                 material.SpecularFactor = (Num.Vector3?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "SpecularFactor")?.Value ?? Num.Vector3.One;
-                material.GlossinessFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "GlossinessFactor")?.Value ?? 0.0f;
+                material.GlossinessFactor = (float?)materialChannel.Parameters.FirstOrDefault(x => x.Name == "GlossinessFactor")?.Value ?? 1.0f;
 
                 if (materialChannel.TextureSampler != null)
                 {
