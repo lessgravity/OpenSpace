@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 using OpenSpace.Engine.Extensions;
 using Serilog;
 using SharpGLTF.Schema2;
 using SharpGLTF.Validation;
 using Num = System.Numerics;
-using Vector2 = lessGravity.Mathematics.Vector2;
-using Vector3 = lessGravity.Mathematics.Vector3;
-using Vector4 = lessGravity.Mathematics.Vector4;
+using Vector2 = EngineKit.Mathematics.Vector2;
+using Vector3 = EngineKit.Mathematics.Vector3;
+using Vector4 = EngineKit.Mathematics.Vector4;
 
 namespace OpenSpace.Engine.Graphics.MeshLoaders;
 

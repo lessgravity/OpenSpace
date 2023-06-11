@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using lessGravity.Mathematics;
-using OpenSpace.Engine;
-using OpenSpace.Engine.Graphics;
+using EngineKit.Mathematics;
+using EngineKit;
+using EngineKit.Graphics;
 using Serilog;
 
 namespace OpenSpace.Renderers;

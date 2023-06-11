@@ -1,6 +1,6 @@
 using System;
-using lessGravity.Mathematics;
-using OpenSpace.Engine.Graphics;
+using EngineKit.Mathematics;
+using EngineKit.Graphics;
 
 namespace OpenSpace.Game;
 

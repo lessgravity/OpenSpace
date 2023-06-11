@@ -1,5 +1,5 @@
 using ImGuiNET;
-using OpenSpace.Engine.Graphics;
+using EngineKit.Graphics;
 using Num = System.Numerics;
 
 namespace OpenSpace.Windows;

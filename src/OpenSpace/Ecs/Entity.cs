@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 using OpenSpace.Ecs.Components;
 
 namespace OpenSpace.Ecs;

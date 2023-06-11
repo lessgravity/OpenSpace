@@ -1,0 +1,3 @@
+[submodule "lib/EngineKit"]
+	path = lib/EngineKit
+	url = git@github.com:deccer/EngineKit.git

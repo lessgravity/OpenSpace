@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Linq;
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 using OpenSpace.Ecs.Components;
-using OpenSpace.Engine.Graphics;
+using EngineKit.Graphics;
 using OpenSpace.Renderers;
 using Serilog;
 

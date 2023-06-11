@@ -5,17 +5,17 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using ImGuiNET;
-using lessGravity.Mathematics;
-using lessGravity.Native.OpenGL;
-using OpenSpace.Engine;
-using OpenSpace.Engine.Graphics;
+using EngineKit.Mathematics;
+using EngineKit.Native.OpenGL;
+using EngineKit;
+using EngineKit.Graphics;
 using OpenSpace.Game;
 using OpenSpace.Messages;
 using Serilog;
 using Num = System.Numerics;
-using Vector2 = lessGravity.Mathematics.Vector2;
-using Vector3 = lessGravity.Mathematics.Vector3;
-using Vector4 = lessGravity.Mathematics.Vector4;
+using Vector2 = EngineKit.Mathematics.Vector2;
+using Vector3 = EngineKit.Mathematics.Vector3;
+using Vector4 = EngineKit.Mathematics.Vector4;
 
 namespace OpenSpace.Renderers;
 

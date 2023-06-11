@@ -1,4 +1,4 @@
-﻿using lessGravity.Native.OpenGL;
+﻿using EngineKit.Native.OpenGL;
 using OpenSpace.Engine.Extensions;
 
 namespace OpenSpace.Engine.Graphics;

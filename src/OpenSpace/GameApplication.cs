@@ -1,12 +1,12 @@
-using lessGravity.Native.OpenGL;
+using EngineKit.Native.OpenGL;
 using Microsoft.Extensions.Options;
 using OpenSpace.Ecs;
-using OpenSpace.Engine;
-using OpenSpace.Engine.Graphics;
-using OpenSpace.Engine.Input;
+using EngineKit;
+using EngineKit.Graphics;
+using EngineKit.Input;
 using OpenSpace.Messages;
 using Serilog;
-using ILimits = OpenSpace.Engine.ILimits;
+using ILimits = EngineKit.ILimits;
 
 namespace OpenSpace;
 

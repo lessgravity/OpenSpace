@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 using Serilog;
 using Vector3 = System.Numerics.Vector3;
 

@@ -1,7 +1,7 @@
 ﻿using System;
-using lessGravity.Mathematics;
-using OpenSpace.Engine;
-using OpenSpace.Engine.Input;
+using EngineKit.Mathematics;
+using EngineKit;
+using EngineKit.Input;
 
 namespace OpenSpace;
 

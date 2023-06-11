@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 using OpenSpace.Ecs;
 using OpenSpace.Ecs.Components;
-using OpenSpace.Engine.Graphics;
+using EngineKit.Graphics;
 
 namespace OpenSpace.Game;
 

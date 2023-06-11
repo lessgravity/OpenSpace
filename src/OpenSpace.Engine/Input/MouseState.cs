@@ -1,5 +1,5 @@
 using System.Collections;
-using lessGravity.Native.GLFW;
+using EngineKit.Native.Glfw;
 
 namespace OpenSpace.Engine.Input;
 

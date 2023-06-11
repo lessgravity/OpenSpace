@@ -1,5 +1,5 @@
-using lessGravity.Mathematics;
-using OpenSpace.Engine.Graphics;
+using EngineKit.Mathematics;
+using EngineKit.Graphics;
 using Serilog;
 
 namespace OpenSpace.Renderers;

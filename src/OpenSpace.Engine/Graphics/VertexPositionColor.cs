@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 
 namespace OpenSpace.Engine.Graphics;
 

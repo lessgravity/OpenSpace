@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using lessGravity.Native.OpenGL;
+using EngineKit.Native.OpenGL;
 using Serilog;
 
 namespace OpenSpace.Engine.Graphics;

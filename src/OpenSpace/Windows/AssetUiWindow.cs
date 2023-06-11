@@ -1,6 +1,6 @@
 using ImGuiNET;
-using OpenSpace.Engine.Graphics;
-using OpenSpace.Engine.UI;
+using EngineKit.Graphics;
+using EngineKit.UI;
 using Num = System.Numerics;
 
 namespace OpenSpace.Windows;

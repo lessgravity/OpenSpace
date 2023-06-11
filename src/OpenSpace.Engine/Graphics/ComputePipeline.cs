@@ -1,5 +1,5 @@
 using System;
-using lessGravity.Native.OpenGL;
+using EngineKit.Native.OpenGL;
 using OpenSpace.Engine.Graphics.Shaders;
 
 namespace OpenSpace.Engine.Graphics;

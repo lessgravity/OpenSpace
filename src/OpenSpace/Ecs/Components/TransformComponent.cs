@@ -1,4 +1,4 @@
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 
 namespace OpenSpace.Ecs.Components;
 

@@ -1,8 +1,8 @@
 using ImGuiNET;
-using lessGravity.Mathematics;
-using OpenSpace.Engine;
-using OpenSpace.Engine.Graphics;
-using OpenSpace.Engine.UI;
+using EngineKit.Mathematics;
+using EngineKit;
+using EngineKit.Graphics;
+using EngineKit.UI;
 using Num = System.Numerics;
 
 namespace OpenSpace.Windows;

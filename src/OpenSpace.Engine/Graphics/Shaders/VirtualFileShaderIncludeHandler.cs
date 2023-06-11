@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 using Serilog;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;
@@ -147,7 +147,7 @@ public class VirtualFileShaderIncludeHandler : IShaderIncludeHandler
             return "float";
         }
 
-        if (type == typeof(lessGravity.Mathematics.Point))
+        if (type == typeof(EngineKit.Mathematics.Point))
         {
             return "ivec2";
         }

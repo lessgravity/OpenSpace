@@ -1,6 +1,6 @@
 using System;
 using JoltPhysicsSharp;
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 
 namespace OpenSpace.Physics;
 

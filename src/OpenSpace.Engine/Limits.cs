@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
-using lessGravity.Native.GLFW;
-using lessGravity.Native.OpenGL;
+using EngineKit.Native.Glfw;
+using EngineKit.Native.OpenGL;
 
 namespace OpenSpace.Engine;
 

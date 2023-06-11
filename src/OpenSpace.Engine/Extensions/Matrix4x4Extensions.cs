@@ -1,4 +1,4 @@
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 using Num = System.Numerics;
 
 namespace OpenSpace.Engine.Extensions;

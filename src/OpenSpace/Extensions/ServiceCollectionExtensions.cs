@@ -1,9 +1,9 @@
-using lessGravity.Mathematics;
+using EngineKit.Mathematics;
 using Microsoft.Extensions.DependencyInjection;
 using OpenSpace.Ecs;
-using OpenSpace.Engine;
-using OpenSpace.Engine.Extensions;
-using OpenSpace.Engine.Input;
+using EngineKit;
+using EngineKit.Extensions;
+using EngineKit.Input;
 using OpenSpace.Physics;
 using OpenSpace.Renderers;
 using OpenSpace.Windows;
