@@ -7,6 +7,12 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
+        <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+        <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0"/>
@@ -23,6 +29,14 @@
     <ItemGroup>
         <None Update="appsettings.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="$(ProjectDir)..\..\lib\EngineKit\lib\glfw\glfw3.dll" Condition=" '$(RuntimeIdentifier)' == 'win-x64' or ('$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' and '$(Prefer32Bit)' == 'false') ">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            <InProject>false</InProject>
         </None>
     </ItemGroup>
 
