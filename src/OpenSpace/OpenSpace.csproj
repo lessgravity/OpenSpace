@@ -4,17 +4,19 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <PublishAot>true</PublishAot>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
-        <PackageReference Include="Serilog" Version="2.12.0" />
-        <PackageReference Include="JoltPhysicsSharp" Version="1.3.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0"/>
+        <PackageReference Include="Serilog" Version="2.12.0"/>
+        <PackageReference Include="JoltPhysicsSharp" Version="1.8.1"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\lib\EngineKit\src\EngineKit\EngineKit.csproj" />
-        <ProjectReference Include="..\OpenSpace.Assets\OpenSpace.Assets.csproj" />
+        <ProjectReference Include="..\..\lib\EngineKit\src\EngineKit\EngineKit.csproj"/>
+        <ProjectReference Include="..\OpenSpace.Assets\OpenSpace.Assets.csproj"/>
     </ItemGroup>
 
 </Project>

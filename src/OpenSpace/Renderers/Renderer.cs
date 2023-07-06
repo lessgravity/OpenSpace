@@ -260,7 +260,13 @@ internal class Renderer : IRenderer
 
     public bool Load()
     {
-        if (!ReloadPipelines("../../../../OpenSpace.Assets"))
+        /*
+        var sourcePath = Debugger.IsAttached
+            ? "../../../../OpenSpace.Assets"
+            : "../../../../../OpenSpace.Assets";
+            */
+        var sourcePath = "../../../../OpenSpace.Assets";
+        if (!ReloadPipelines(sourcePath))
         {
             return false;
         }
@@ -600,16 +606,7 @@ internal class Renderer : IRenderer
             .Build();
     }
     
-#if DEBUG
-    public 
-#else
-    private
-#endif
-    bool ReloadPipelines(
-#if DEBUG
-            string sourcePath
-#endif
-        )
+    public bool ReloadPipelines(string? sourcePath)
     {
         const string globalShadowMapVertexShader = "Shaders/Shadow.vs.glsl";
         const string globalShadowMapFragmentShader = "Shaders/Shadow.fs.glsl";
@@ -623,7 +620,7 @@ internal class Renderer : IRenderer
         const string finalVertexShader = "Shaders/Final.vs.glsl";
         const string finalFragmentShader = "Shaders/Final.fs.glsl";
         
-#if DEBUG
+//#if DEBUG
         var destinationPath = AppDomain.CurrentDomain.BaseDirectory;
         if (!string.IsNullOrEmpty(sourcePath))
         {
@@ -639,9 +636,9 @@ internal class Renderer : IRenderer
             File.Copy(Path.Combine(sourcePath, finalVertexShader), Path.Combine(destinationPath, finalVertexShader), true);
             File.Copy(Path.Combine(sourcePath, finalFragmentShader), Path.Combine(destinationPath, finalFragmentShader), true);
         }
-#endif
+        
         _gBufferPass.ReloadPipeline(sourcePath, destinationPath);
-
+//#endif
         var lightsGlobalPassGraphicsPipelineResult = _graphicsContext.CreateGraphicsPipelineBuilder()
             .WithShadersFromFiles(lightsGlobalVertexShader, lightsGlobalFragmentShader)
             .WithVertexInput(new VertexInputDescriptorBuilder()

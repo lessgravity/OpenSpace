@@ -112,12 +112,12 @@ public sealed class JoltPhysicsWorld : IPhysicsWorld
     {
         var position = _physicsSystem!.BodyInterface.GetCenterOfMassPosition(bodyId);
 
-        return new Vector3(position.X, position.Y, position.Z);
+        return new Vector3((float)position.X, (float)position.Y, (float)position.Z);
     }
 
     public void Update(float deltaTime)
     {
-        _physicsSystem!.Update(1.0f / 60.0f, 1, 1, _tempAllocator, _jobThreadPool);
+        _physicsSystem!.Update(1.0f / 60.0f, 1, 1, _jobThreadPool);
     }
 
     private static bool BroadPhaseCanCollide(ObjectLayer layer1, BroadPhaseLayer layer2)
@@ -148,7 +148,11 @@ public sealed class JoltPhysicsWorld : IPhysicsWorld
         }
     }
 
-    private ValidateResult PhysicsSystemOnOnContactValidate(PhysicsSystem system, in Body body1, in Body body2, Num.Vector3 baseoffset, nint collisionresult)
+    private ValidateResult PhysicsSystemOnOnContactValidate(PhysicsSystem system,
+        in Body body1,
+        in Body body2,
+        Double3 baseOffset,
+        nint collisionResult)
     {
         return ValidateResult.AcceptContact;
     }
