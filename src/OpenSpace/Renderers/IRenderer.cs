@@ -7,15 +7,14 @@ namespace OpenSpace.Renderers;
 public interface IRenderer : IDisposable
 {
     void AddMeshInstance(MeshInstance meshInstance);
-    void AddDirectionalLight(
-        Vector3 direction,
+    void AddDirectionalLight(Vector3 direction,
         Vector3 color,
         float intensity,
         Vector2 dimensions,
         float near,
         float far,
         bool isShadowCaster,
-        int shadowQuality);
+        int shadowQuality, int shadowMapSize);
     
     void AddPointLight(
         Vector3 position,
@@ -50,5 +49,5 @@ public interface IRenderer : IDisposable
     TextureView? GBufferMotionTexture { get; }
     TextureView? GBufferEmissiveTexture { get; }
     TextureView? LightsTexture { get; }
-    ITexture? FirstGlobalLightShadowMap { get; }
+    TextureView? FirstGlobalLightShadowMap { get; }
 }

@@ -9,8 +9,10 @@ using EngineKit.Mathematics;
 using EngineKit.Native.OpenGL;
 using EngineKit;
 using EngineKit.Graphics;
+using OpenSpace.Extensions;
 using OpenSpace.Game;
 using OpenSpace.Messages;
+using OpenSpace.Windows;
 using Serilog;
 using Num = System.Numerics;
 using Vector2 = EngineKit.Mathematics.Vector2;
@@ -31,6 +33,7 @@ internal class Renderer : IRenderer
     private readonly IGraphicsContext _graphicsContext;
     private readonly IMeshLoader _meshLoader;
     private readonly ISamplerLibrary _samplerLibrary;
+    private readonly ILineRenderer _lineRenderer;
 
     private ITexture? _blueNoiseTexture;
 
@@ -65,8 +68,6 @@ internal class Renderer : IRenderer
     private IUniformBuffer? _lightPassParametersBuffer;
 
     private readonly IList<GlobalLight> _globalLights;
-    private bool _updateGlobalLights;
-    private IShaderStorageBuffer? _globalLightsBuffer;
 
     private readonly IList<GpuLocalLight> _localLights;
     private bool _updateLocalLights;
@@ -112,13 +113,15 @@ internal class Renderer : IRenderer
         IGraphicsContext graphicsContext,
         IMeshLoader meshLoader,
         ISamplerLibrary samplerLibrary,
-        IMessageBus messageBus)
+        IMessageBus messageBus,
+        ILineRenderer lineRenderer)
     {
         _logger = logger;
         _applicationContext = applicationContext;
         _graphicsContext = graphicsContext;
         _meshLoader = meshLoader;
         _samplerLibrary = samplerLibrary;
+        _lineRenderer = lineRenderer;
 
         _cameraInformation = new GpuCameraInformation();
         _meshInstances = new List<MeshInstance>(2048);
@@ -155,7 +158,7 @@ internal class Renderer : IRenderer
 
     public TextureView? LightsTexture => _lightsTextureView;
 
-    public ITexture? FirstGlobalLightShadowMap => _globalLights[0].ShadowMapTexture;
+    public TextureView? FirstGlobalLightShadowMap => _globalLights[0].ShadowMapTextureView;
 
     public void Dispose()
     {
@@ -176,7 +179,6 @@ internal class Renderer : IRenderer
 
         _shadowSettingsBuffer?.Dispose();
         _localLightsBuffer?.Dispose();
-        _globalLightsBuffer?.Dispose();
         
         _cameraInformationBuffer?.Dispose();
         _indirectBuffer?.Dispose();
@@ -211,7 +213,8 @@ internal class Renderer : IRenderer
         float near,
         float far,
         bool isShadowCaster,
-        int shadowQuality)
+        int shadowQuality,
+        int shadowMapSize)
     {
         var globalLight = new GlobalLight
         {
@@ -225,10 +228,9 @@ internal class Renderer : IRenderer
             Intensity = intensity
         };
         
-        CreateShadowMap(globalLight, 1024, 1024);
+        globalLight.CreateGlobalLightShadowTexture(_graphicsContext, _linearMipmapLinearClampedSampler, 1024);
         
         _globalLights.Add(globalLight);
-        _updateGlobalLights = true;
     }
 
     public void AddPointLight(
@@ -267,6 +269,11 @@ internal class Renderer : IRenderer
             */
         var sourcePath = "../../../../OpenSpace.Assets";
         if (!ReloadPipelines(sourcePath))
+        {
+            return false;
+        }
+
+        if (!_lineRenderer.Load())
         {
             return false;
         }
@@ -318,9 +325,6 @@ internal class Renderer : IRenderer
 
         _localLightsBuffer = _graphicsContext.CreateShaderStorageBuffer<GpuLocalLight>("LocalLights");
         _localLightsBuffer.AllocateStorage(32 * Marshal.SizeOf<GpuLocalLight>(), StorageAllocationFlags.Dynamic);
-
-        _globalLightsBuffer = _graphicsContext.CreateShaderStorageBuffer<GpuGlobalLight>("GlobalLights");
-        _globalLightsBuffer.AllocateStorage(2 * Marshal.SizeOf<GpuGlobalLight>(), StorageAllocationFlags.Dynamic);
 
         _shadowSettingsBuffer = _graphicsContext.CreateUniformBuffer<GpuShadowSettings>("ShadowSettings");
         _shadowSettingsBuffer.AllocateStorage(Marshal.SizeOf<GpuShadowSettings>(), StorageAllocationFlags.Dynamic);
@@ -388,18 +392,8 @@ internal class Renderer : IRenderer
         {
             return;
         }
-        
-        _cameraInformation.ProjectionMatrix = camera.ProjectionMatrix;
-        _cameraInformation.ViewMatrix = camera.ViewMatrix;
-        _cameraInformation.Viewport = new Vector4(
-            _applicationContext.ScaledFramebufferSize.X,
-            _applicationContext.ScaledFramebufferSize.Y, 
-            0, 
-            0);
-        _cameraInformation.CameraPositionAndFieldOfView = new Vector4(camera.Position, MathHelper.ToRadians(camera.FieldOfView));
-        _cameraInformation.CameraDirectionAndAspectRatio = new Vector4(camera.Direction, camera.AspectRatio);
-        _cameraInformationBuffer.Update(_cameraInformation);
 
+        UpdateCameraInformation(camera);
         UpdateGeometryBuffersIfNecessary();
 
         _gBufferPass.Render(
@@ -410,8 +404,7 @@ internal class Renderer : IRenderer
             ref _indirectBuffer, _meshInstances.Count);
 
         RenderLights(camera);
-        
-        RenderPassFinal(camera);
+        RenderFinal(camera);
         
         GL.PushDebugGroup("DrawToSwapChain");
         _graphicsContext.BeginRenderToSwapchain(_swapchainDescriptor);
@@ -434,6 +427,60 @@ internal class Renderer : IRenderer
 
     public void RenderDebugUI(ICamera camera)
     {
+        if (ImGui.Begin("Lights"))
+        {
+            for (var i = 0; i < _globalLights.Count; i++)
+            {
+                var globalLight = _globalLights[i];
+                if (ImGui.TreeNodeEx($"Global Light {i}"))
+                {
+                    var lightAzimuth = globalLight.Azimuth;
+                    var lightAltitude = globalLight.Altitude;
+                    var lightColor = globalLight.Color.ToNumVector3();
+                    //var lightDirection = globalLight.Direction.ToNumVector3();
+                    var lightDimension = globalLight.Dimensions.ToNumVector2();
+                    var lightNear = globalLight.Near;
+                    var lightFar = globalLight.Far;
+                    var lightIntensity = globalLight.Intensity;
+                    if (ImGui.SliderFloat2("Dimension", ref lightDimension, 0.1f, 1024))
+                    {
+                        globalLight.Dimensions = lightDimension.ToVector2();
+                    }
+
+                    if (ImGui.SliderFloat3("Color", ref lightColor, 0.0f, 1.0f))
+                    {
+                        globalLight.Color = lightColor.ToVector3();
+                    }
+
+                    if (ImGui.SliderFloat("Intensity", ref lightIntensity, 0.0f, 256f))
+                    {
+                        globalLight.Intensity = lightIntensity;
+                    }
+
+                    if (ImGui.SliderFloat("Azimuth", ref lightAzimuth, -(MathF.PI * MathHelper.ToDegree) + 0.01f, (MathF.PI * MathHelper.ToDegree) - 0.01f))
+                    {
+                        globalLight.Azimuth = lightAzimuth;
+                    }
+                    if (ImGui.SliderFloat("Altitude", ref lightAltitude, -(MathF.PI * MathHelper.ToDegree) + 0.01f, (MathF.PI * MathHelper.ToDegree) - 0.01f))
+                    {
+                        globalLight.Altitude = lightAltitude;
+                    }
+                    if (ImGui.SliderFloat("Near", ref lightNear, -1024.0f, 0.0f))
+                    {
+                        globalLight.Near = lightNear;
+                    }
+
+                    if (ImGui.SliderFloat("Far", ref lightFar, 0, 1024))
+                    {
+                        globalLight.Far = lightFar;
+                    }
+                    
+                    ImGuiExtensions.ShowImage(globalLight.ShadowMapTextureView, new Num.Vector2(384, 384));
+
+                    ImGui.TreePop();
+                }
+            }
+        }
         if (ImGui.Begin("Debug"))
         {
             ImGui.TextUnformatted($"Camera: {camera.Position}");
@@ -524,6 +571,85 @@ internal class Renderer : IRenderer
             ImGui.End();
         }
     }
+    
+    private void UpdateCameraInformation(ICamera camera)
+    {
+        _cameraInformation.ProjectionMatrix = camera.ProjectionMatrix;
+        _cameraInformation.ViewMatrix = camera.ViewMatrix;
+        _cameraInformation.Viewport = new Vector4(
+            _applicationContext.ScaledFramebufferSize.X,
+            _applicationContext.ScaledFramebufferSize.Y, 
+            0, 
+            0);
+        _cameraInformation.CameraPositionAndFieldOfView = new Vector4(camera.Position, MathHelper.ToRadians(camera.FieldOfView));
+        _cameraInformation.CameraDirectionAndAspectRatio = new Vector4(camera.Direction, camera.AspectRatio);
+        _cameraInformationBuffer.Update(_cameraInformation);
+    }
+    
+    private IEnumerable<VertexPositionColor> CalculateGlobalLightsFrustumVertices(ICamera camera)
+    {
+        var vertices = new List<VertexPositionColor>(24 * _globalLights.Count);
+        var lightColor = Color.Red.ToVector3();
+        for (var i = 0; i < _globalLights.Count; i++)
+        {
+            var globalLight = _globalLights[i];
+            globalLight.UpdateMatrices(camera);
+            var lightFrustum = globalLight.BoundingFrustum;
+            var lightFrustumCorners = lightFrustum.GetCorners();
+
+            var nearBottomRight = lightFrustumCorners[0];
+            var nearTopRight = lightFrustumCorners[1];
+            var nearTopLeft = lightFrustumCorners[2];
+            var nearBottomLeft = lightFrustumCorners[3];
+            
+            var farBottomRight = lightFrustumCorners[4];
+            var farTopRight = lightFrustumCorners[5];
+            var farTopLeft = lightFrustumCorners[6];
+            var farBottomLeft = lightFrustumCorners[7];
+            
+            vertices.Add(new VertexPositionColor(nearBottomRight, lightColor));
+            vertices.Add(new VertexPositionColor(nearTopRight, lightColor));
+            
+            vertices.Add(new VertexPositionColor(nearTopRight, lightColor));
+            vertices.Add(new VertexPositionColor(nearTopLeft, lightColor));
+
+            vertices.Add(new VertexPositionColor(nearTopLeft, lightColor));
+            vertices.Add(new VertexPositionColor(nearBottomLeft, lightColor));
+
+            vertices.Add(new VertexPositionColor(nearBottomLeft, lightColor));
+            vertices.Add(new VertexPositionColor(nearBottomRight, lightColor));
+            
+            // ---
+            
+            vertices.Add(new VertexPositionColor(nearBottomRight, lightColor));
+            vertices.Add(new VertexPositionColor(farBottomRight, lightColor));
+            
+            vertices.Add(new VertexPositionColor(nearTopRight, lightColor));
+            vertices.Add(new VertexPositionColor(farTopRight, lightColor));
+
+            vertices.Add(new VertexPositionColor(nearTopLeft, lightColor));
+            vertices.Add(new VertexPositionColor(farTopLeft, lightColor));
+
+            vertices.Add(new VertexPositionColor(nearBottomLeft, lightColor));
+            vertices.Add(new VertexPositionColor(farBottomLeft, lightColor));
+            
+            // ---
+
+            vertices.Add(new VertexPositionColor(farBottomRight, lightColor));
+            vertices.Add(new VertexPositionColor(farTopRight, lightColor));
+            
+            vertices.Add(new VertexPositionColor(farTopRight, lightColor));
+            vertices.Add(new VertexPositionColor(farTopLeft, lightColor));
+
+            vertices.Add(new VertexPositionColor(farTopLeft, lightColor));
+            vertices.Add(new VertexPositionColor(farBottomLeft, lightColor));
+
+            vertices.Add(new VertexPositionColor(farBottomLeft, lightColor));
+            vertices.Add(new VertexPositionColor(farBottomRight, lightColor));
+        }
+
+        return vertices;
+    }    
 
     private void UpdateGeometryBuffersIfNecessary()
     {
@@ -645,10 +771,9 @@ internal class Renderer : IRenderer
                 .AddAttribute(0, DataType.Float, 3, 0)
                 .Build(nameof(VertexPosition)))
             .WithTopology(PrimitiveTopology.Triangles)
-            .WithFaceWinding(FaceWinding.Clockwise)
-            .DisableCulling()
-            //.DisableDepthTest()
-            //.EnableBlending(ColorBlendAttachmentDescriptor.Additive)
+            .WithFaceWinding(FaceWinding.CounterClockwise)
+            .EnableDepthTest()
+            .EnableBlending(ColorBlendAttachmentDescriptor.Additive)
             .Build("LightsGlobalPass");
         if (lightsGlobalPassGraphicsPipelineResult.IsFailure)
         {
@@ -707,6 +832,7 @@ internal class Renderer : IRenderer
                 .Build(nameof(VertexPosition)))
             .WithTopology(PrimitiveTopology.Triangles)
             .WithFaceWinding(FaceWinding.CounterClockwise)
+            .EnableCulling(CullMode.Front)
             .EnableDepthTest()
             .Build("GlobalLightShadowPass");
         if (shadowPassGraphicsPipelineResult.IsFailure)
@@ -730,94 +856,56 @@ internal class Renderer : IRenderer
         }
         
         GL.PushDebugGroup("Render-Shadow-Maps");
-        _graphicsContext.BindGraphicsPipeline(_shadowPassGraphicsPipeline);
-        RenderShadowMaps();
+        RenderGlobalLightShadowMaps(camera);
         GL.PopDebugGroup();
         
         _graphicsContext.BeginRenderToFramebuffer(_lightsPassDescriptor);
-
-        RenderPassGlobalLights();
-        
+        RenderGlobalLights(camera);
         //RenderLocalLights();
-
         _graphicsContext.EndRender();
     }
-    
-    private void CreateShadowMap(GlobalLight globalLight, int width, int height)
+
+    private void RenderGlobalLightShadowMaps(ICamera camera)
     {
-        globalLight.ShadowMapTexture?.Dispose();
-        globalLight.ShadowMapTexture = _graphicsContext.CreateTexture2D(width, height, Format.D16UNorm, $"Directional-Light-ShadowMap-{GetHashCode()}");
-        globalLight.ShadowMapTexture.MakeResident(_linearMipmapLinearRepeatSampler);
-
-        if (globalLight.ShadowMapFramebufferDescriptor != null)
-        {
-            _graphicsContext.RemoveFramebuffer(globalLight.ShadowMapFramebufferDescriptor.Value);
-        }
-
-        globalLight.ShadowMapFramebufferDescriptor = new FramebufferDescriptorBuilder()
-            .WithDepthAttachment(globalLight.ShadowMapTexture, true)
-            .WithViewport(width, height, 0)
-            .Build($"Directional-Light-Shadow-{GetHashCode()}");
-    }
-
-    private void RenderShadowMaps()
-    {
-        if (_globalLightsBuffer == null ||
-            _shadowPassGraphicsPipeline == null ||
+        if (_shadowPassGraphicsPipeline == null ||
             _meshPool == null ||
+            _instanceBuffer == null ||
             _indirectBuffer == null)
         {
             return;
         }
+       
+        _graphicsContext.BindGraphicsPipeline(_shadowPassGraphicsPipeline);
 
-        var globalLightBuffer = _graphicsContext.CreateUniformBuffer<GpuGlobalLight>("GlobalLightBuffer");
-        globalLightBuffer.AllocateStorage(Marshal.SizeOf<GpuGlobalLight>(), StorageAllocationFlags.Dynamic);
-
+        
         // ReSharper disable once ForCanBeConvertedToForeach
         for (var i = 0; i < _globalLights.Count; i++)
         {
             var globalLight = _globalLights[i];
-            if (!globalLight.IsShadowCaster || !globalLight.ShadowMapFramebufferDescriptor.HasValue)
-            {
-                continue;
-            }
+            globalLight.UpdateMatrices(camera);
             
-            var dimensions = globalLight.Dimensions;
-            var eye = -Vector3.Normalize(globalLight.Direction) * 10 + new Vector3(0, 2, 0);
-            var projectionMatrix = Matrix.OrthoOffCenterRH(-dimensions.X / 2, dimensions.X / 2, -dimensions.Y / 2, dimensions.Y / 2, globalLight.Near, globalLight.Far);
-            var viewMatrix = Matrix.LookAtRH(eye, eye + globalLight.Direction, Vector3.Up);
-
-            var gpuGlobalLight = new GpuGlobalLight
-            {
-                ProjectionMatrix = projectionMatrix,
-                ViewMatrix = viewMatrix,
-                Direction = new Vector4(globalLight.Direction, 1.0f/*globalLight.ShadowQuality*/),
-                Color = new Vector4(globalLight.Color, 1.0f),
-            };
-
-            globalLightBuffer.Update(gpuGlobalLight);
+            using var globalLightForShadowMapBuffer = _graphicsContext.CreateUniformBuffer<GpuShadowGlobalLight>("GlobalShadowLightBuffer");
+            globalLightForShadowMapBuffer.AllocateStorage(new GpuShadowGlobalLight(globalLight), StorageAllocationFlags.None);
             
             _graphicsContext.BeginRenderToFramebuffer(globalLight.ShadowMapFramebufferDescriptor.Value);
-            
+
             _shadowPassGraphicsPipeline.BindVertexBuffer(_meshPool.VertexBuffer, 0, 0);
             _shadowPassGraphicsPipeline.BindIndexBuffer(_meshPool.IndexBuffer);
-            _shadowPassGraphicsPipeline.BindUniformBuffer(globalLightBuffer, 2);
             _shadowPassGraphicsPipeline.BindShaderStorageBuffer(_instanceBuffer, 3);
+            
+            _shadowPassGraphicsPipeline.BindUniformBuffer(globalLightForShadowMapBuffer, 2);
             _shadowPassGraphicsPipeline.MultiDrawElementsIndirect(_indirectBuffer, _meshInstances.Count);
 
             _graphicsContext.EndRender();
         }
-        
-        globalLightBuffer.Dispose();
     }
 
-    private void RenderPassGlobalLights()
+    private void RenderGlobalLights(ICamera camera)
     {
-        if (_lightsGlobalPassGraphicsPipeline == null || 
-            _shadowSettingsBuffer == null || 
-            _globalLightsBuffer == null ||
+        if (_lightsGlobalPassGraphicsPipeline == null ||
+            _shadowSettingsBuffer == null ||
             _cameraInformationBuffer == null ||
-            _nearestSampler == null || 
+            _nearestSampler == null ||
             _linearMipmapLinearRepeatSampler == null ||
             _preparePrepareImageBasedLightingPass.IrradianceCubeTexture == null ||
             _preparePrepareImageBasedLightingPass.PrefilteredCubeTexture == null ||
@@ -826,51 +914,44 @@ internal class Renderer : IRenderer
         {
             return;
         }
-        
-        _graphicsContext.BindGraphicsPipeline(_lightsGlobalPassGraphicsPipeline);
-        
+
         _shadowSettingsBuffer.Update(_shadowSettings);
-       
+
+        using var globalLightsBuffer = _graphicsContext.CreateShaderStorageBuffer<GpuGlobalLight>("GlobalGpuLight");
+        globalLightsBuffer.AllocateStorage(Marshal.SizeOf<GpuGlobalLight>() * _globalLights.Count, StorageAllocationFlags.Dynamic);
+
         // ReSharper disable once ForCanBeConvertedToForeach
         for (var i = 0; i < _globalLights.Count; i++)
         {
             var globalLight = _globalLights[i];
-            var dimensions = globalLight.Dimensions;
+            globalLight.UpdateMatrices(camera);
+            var gpuGlobalLight = globalLight.ToGpuGlobalLight();
 
-            var eye = -Vector3.Normalize(globalLight.Direction) * 10 + new Vector3(0, 2, 0);
-            
-            var projectionMatrix = Matrix.OrthoOffCenterRH(-dimensions.X / 2, dimensions.X / 2, -dimensions.Y / 2, dimensions.Y / 2, globalLight.Near, globalLight.Far);
-            var viewMatrix = Matrix.LookAtRH(eye, eye + globalLight.Direction, Vector3.Up);
-
-            var gpuGlobalLight = new GpuGlobalLight
-            {
-                ProjectionMatrix = projectionMatrix,
-                ViewMatrix = viewMatrix,
-                Direction = new Vector4(globalLight.Direction, globalLight.ShadowQuality),
-                Color = new Vector4(globalLight.Color, globalLight.Intensity),
-                ShadowMapTextureHandle = globalLight.ShadowMapTexture.TextureHandle
-            };
-            _globalLightsBuffer.Update(gpuGlobalLight, i);
+            globalLightsBuffer.Update(gpuGlobalLight, i);
         }
-        
-        _localLightsBuffer.Update(_localLights.ToArray());
-        
+        //_localLightsBuffer.Update(_localLights.ToArray());
+
+        _graphicsContext.BindGraphicsPipeline(_lightsGlobalPassGraphicsPipeline);
+
         _lightsGlobalPassGraphicsPipeline.BindUniformBuffer(_cameraInformationBuffer, 0);
         _lightsGlobalPassGraphicsPipeline.BindUniformBuffer(_shadowSettingsBuffer, 1);
         _lightsGlobalPassGraphicsPipeline.BindUniformBuffer(_lightPassParametersBuffer, 2);
-        _lightsGlobalPassGraphicsPipeline.BindShaderStorageBuffer(_globalLightsBuffer, 3);
+        _lightsGlobalPassGraphicsPipeline.BindShaderStorageBuffer(globalLightsBuffer, 3);
         _lightsGlobalPassGraphicsPipeline.BindShaderStorageBuffer(_localLightsBuffer, 4);
-            
+
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.DepthBufferTexture, 0);
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.GBufferAlbedoTexture, 1);
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.GBufferNormalTexture, 2);
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.GBufferMaterialTexture, 3);
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_nearestSampler, _gBufferPass.GBufferEmissiveTexture, 4);
         _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearRepeatSampler, _blueNoiseTexture, 5);
-        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearClampedSampler, _preparePrepareImageBasedLightingPass.BrdfIntegrationLutTexture, 6);        
-        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearRepeatSampler, _preparePrepareImageBasedLightingPass.IrradianceCubeTexture, 7);
-        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearRepeatSampler, _preparePrepareImageBasedLightingPass.PrefilteredCubeTexture, 8);
-            
+        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearClampedSampler,
+            _preparePrepareImageBasedLightingPass.BrdfIntegrationLutTexture, 6);
+        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearRepeatSampler,
+            _preparePrepareImageBasedLightingPass.IrradianceCubeTexture, 7);
+        _lightsGlobalPassGraphicsPipeline.BindSampledTexture(_linearMipmapLinearRepeatSampler,
+            _preparePrepareImageBasedLightingPass.PrefilteredCubeTexture, 8);
+
         _lightsGlobalPassGraphicsPipeline.DrawArrays(3);
     }
 
@@ -901,7 +982,7 @@ internal class Renderer : IRenderer
         _lightsLocalPassGraphicsPipeline.DrawElementsInstanced((int)_spotLightVolumePooledMesh.IndexCount, 0, _localLightsBuffer.Count);
     }
 
-    private void RenderPassFinal(ICamera camera)
+    private void RenderFinal(ICamera camera)
     {
         if (_cameraInformationBuffer == null || 
             _nearestSampler == null || 
@@ -928,7 +1009,14 @@ internal class Renderer : IRenderer
         
         _finalPassGraphicsPipeline.BindUniformBuffer(_uchimuraSettingsBuffer, 3);
         _finalPassGraphicsPipeline.DrawArrays(3);
+        
         _graphicsContext.EndRender();
+        
+        {
+            var globalLightsVertices = CalculateGlobalLightsFrustumVertices(camera);
+            _lineRenderer.SetLines(globalLightsVertices);
+        }
+        _lineRenderer.Draw(_cameraInformationBuffer);    
     }
     
     private static float Uchimura(float x, float p, float a, float m, float l, float c, float b)

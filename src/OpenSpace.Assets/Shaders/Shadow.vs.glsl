@@ -7,16 +7,10 @@ layout (location = 0) out gl_PerVertex
     vec4 gl_Position;
 };
 
-layout (binding = 2, std140) uniform GlobalLight
+layout (binding = 2, std140) uniform GpuShadowGlobalLight
 {
     mat4 ProjectionMatrix;
     mat4 ViewMatrix;
-    vec4 Direction;
-    vec4 Color;
-    uvec2 _padding1;
-    uvec2 _padding2;
-    uvec2 _padding3;
-    uvec2 _padding4;
 } globalLight;
 
 struct GpuModelMeshInstance

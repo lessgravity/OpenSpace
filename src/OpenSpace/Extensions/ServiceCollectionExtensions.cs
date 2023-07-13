@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IApplication, SpaceGameApplication>();
 
         services.AddSingleton<IRenderer, Renderer>();
+        services.AddSingleton<ILineRenderer, LineRenderer>();
         services.AddSingleton<ICamera>(provider => new Camera(provider.GetRequiredService<IApplicationContext>(),
             provider.GetRequiredService<IInputProvider>(), new Vector3(0, 0, 10), Vector3.UnitY));
 

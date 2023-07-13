@@ -224,6 +224,7 @@ internal sealed class SpaceGameApplication : GameApplication
             }
 
             _renderer.RenderDebugUI(_camera);
+            
             UIRenderer.ShowDemoWindow();
             
             _sceneUiWindow.Render();
@@ -261,7 +262,7 @@ internal sealed class SpaceGameApplication : GameApplication
         }
 
         var movement = Vector3.Zero;
-        var speedFactor = 40.0f;
+        var speedFactor = 160.0f;
         if (IsKeyPressed(Glfw.Key.KeyW))
         {
             movement += _camera.Direction;
@@ -308,33 +309,8 @@ internal sealed class SpaceGameApplication : GameApplication
     {
     }
 
-    private unsafe void KtxTest()
-    {
-        var ktxFileName =
-            "/home/deccer/Personal/Code/External/Oxylus-Engine/build/_deps/ktx-src/tests/testimages/pattern_02_bc2.ktx2";
-        var ktxTexture = Ktx.LoadFromFile(ktxFileName);
-        if (ktxTexture->CompressionScheme != Ktx.SuperCompressionScheme.None || Ktx.NeedsTranscoding(ktxTexture))
-        {
-            var transcodeResult = Ktx.Transcode(ktxTexture, Ktx.TranscodeFormat.Bc7Rgba, Ktx.TranscodeFlagBits.HighQuality);
-            if (transcodeResult != Ktx.KtxErrorCode.KtxSuccess)
-            {
-                
-            }
-        }
-        
-        Ktx.Destroy(ktxTexture);
-    }
-
     private bool LoadMeshes()
     {
-        if (!Ktx.Init())
-        {
-            return false;
-        }
-
-        KtxTest();
-        Ktx.Terminate();
-        
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/material_test_shadow_casting_on_metal_materials/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/eas_agamemnon/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ReferencePbr/scene.gltf");
@@ -359,10 +335,12 @@ internal sealed class SpaceGameApplication : GameApplication
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/mira_up/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/cubes/untitled.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/UE/RuinC2k/scene.gltf");
-        _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/UE/RuinC2kPacked/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/UE/RuinC2kPacked/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/ShadowTest/scene.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/metal_crate_tall.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/wk7_unit_blocks_advanced_huth_will/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/waterbottle/WaterBottle.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/FlightHelmet/FlightHelmet.gltf");
+        _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/FlightHelmet/FlightHelmet.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/DamagedHelmet/DamagedHelmet.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/x_sphere_sci-fi/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Skull/SM_Skull_Optimized_point2.gltf");
@@ -404,7 +382,7 @@ internal sealed class SpaceGameApplication : GameApplication
         var entity1 = _entityWorld.CreateEntity(model1.Name);
         _entityWorld.AddComponent(entity1, new TransformComponent
         {
-            LocalPosition = new Vector3(0, 0, 0),
+            LocalPosition = new Vector3(0, -1, 0),
             LocalScale = new Vector3(1.0f)
         });
         _entityWorld.AddComponent(entity1, new ModelRendererComponent { Model = model1/*, Material = defaultPbrMaterial*/});
@@ -453,8 +431,8 @@ internal sealed class SpaceGameApplication : GameApplication
         }
         */
         
-        _renderer.AddDirectionalLight(new Vector3(6, -4, 6), Color.Red.ToVector3(), 3f, new Vector2(32, 32), 1, 128, true, 0);
-        //_renderer.AddDirectionalLight(new Vector3(-6, -7, -6), Color.Orange.ToVector3(), 40f, new Vector2(64, 64), 1, 128, true, 1);
+        _renderer.AddDirectionalLight(new Vector3(6, -4, 6), Color.Red.ToVector3(), 3f, new Vector2(32, 32), -64f, 64, true, 0, 1024);
+        _renderer.AddDirectionalLight(new Vector3(-6, 7, -12), Color.Orange.ToVector3(), 40f, new Vector2(64, 64), -16, 128, true, 1, 1024);
         
         //_renderer.AddSpotLight(new Vector3(0, 10, -3), -Vector3.UnitY, Color.Red.ToVector3(), 100, 2, 12.5f, 17.5f);
         //_renderer.AddPointLight(new Vector3(0, 1, -3), Color.Teal.ToVector3(), 170);

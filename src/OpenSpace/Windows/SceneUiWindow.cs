@@ -79,12 +79,6 @@ public class SceneUiWindow : UiWindow
         }
 
         ImGuiExtensions.ShowImage(_texture, sceneViewSize);
-
-        if (_osdTexture != null && ImGui.Begin("ShadowMap"))
-        {
-            ImGuiExtensions.ShowImage(_osdTexture, new Num.Vector2(512, 512), true);
-            ImGui.End();
-        }
     }
 
     private void RenderToolbar()

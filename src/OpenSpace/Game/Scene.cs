@@ -57,8 +57,6 @@ public class Scene
             ShadowQuality = 0
         };
         _globalLights.Add(globalLight);
-        
-        
     }
 
     public void AddLocalLight(LocalLightType lightType)
@@ -69,23 +67,6 @@ public class Scene
     public void PrepareScene()
     {
         
-    }
-    
-    private void CreateShadowMap(GlobalLight globalLight, int width, int height)
-    {
-        globalLight.ShadowMapTexture?.Dispose();
-        globalLight.ShadowMapTexture = _graphicsContext.CreateTexture2D(width, height, Format.D16UNorm, $"Directional-Light-ShadowMap-{GetHashCode()}");
-        //globalLight.ShadowMapTexture.MakeResident(_linearMipmapLinearRepeatSampler);
-
-        if (globalLight.ShadowMapFramebufferDescriptor != null)
-        {
-            _graphicsContext.RemoveFramebuffer(globalLight.ShadowMapFramebufferDescriptor.Value);
-        }
-
-        globalLight.ShadowMapFramebufferDescriptor = new FramebufferDescriptorBuilder()
-            .WithDepthAttachment(globalLight.ShadowMapTexture, true)
-            .WithViewport(width, height, 0)
-            .Build($"Directional-Light-Shadow-{GetHashCode()}");
     }
     
     private void EntityWorldOnComponentAdded(Component component)

@@ -23,7 +23,7 @@ public static class ImGuiExtensions
         ImGui.PopStyleVar();
     }
     
-    public static void ShowImage(IHasTextureId texture, Num.Vector2 textureSize, bool swizzle = false)
+    public static void ShowImage(IHasTextureId texture, Num.Vector2 textureSize)
     {
         ImGui.Image((nint)texture.Id, new Num.Vector2(textureSize.X, textureSize.Y), _uv0, _uv1);
     }

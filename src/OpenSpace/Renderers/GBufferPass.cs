@@ -70,7 +70,7 @@ internal class GBufferPass : IDisposable
             _applicationContext.ScaledFramebufferSize.Y,
             Format.D32Float, "GBuffer-DepthAttachment");
         _gBufferPassDescriptor = new FramebufferDescriptorBuilder()
-            .WithColorAttachment(GBufferAlbedoTexture, false, Color4.Black)
+            .WithColorAttachment(GBufferAlbedoTexture, true, Color4.Black)
             .WithColorAttachment(GBufferNormalTexture, true, Color4.Black)
             .WithColorAttachment(GBufferMaterialTexture, true, Color4.Black)
             .WithColorAttachment(GBufferMotionTexture, true, Color4.Black)
@@ -157,6 +157,7 @@ internal class GBufferPass : IDisposable
         _gBufferPassGraphicsPipeline.BindShaderStorageBuffer(instanceBuffer, 1);
         _gBufferPassGraphicsPipeline.BindShaderStorageBuffer(materialPool.MaterialBuffer, 2);
         _gBufferPassGraphicsPipeline.MultiDrawElementsIndirect(indirectBuffer, meshInstancesCount);
+        
         _graphicsContext.EndRender();
     }
 }
