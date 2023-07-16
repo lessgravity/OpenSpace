@@ -321,12 +321,13 @@ internal sealed class SpaceGameApplication : GameApplication
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/IntelSponzaPacked/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_IntelSponza_Curtains", "Data/Props/IntelSponzaCurtains/NewSponza_Curtains_glTF.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/someone-crate/scene.gltf");        
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/shadow_test_textured.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Sponza/Sponza.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/sci-fi_floor_panel/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/stylized_material_test/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/venice_mask/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/sci-fi_hallway/scene.gltf");
-        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/shader_ball_jl_01.glb");
+        _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/shader_ball_jl_01.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/material_ball_in_3d-coat.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/iridescent__shader__blender.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/apollo_material_ball.glb");
@@ -340,7 +341,7 @@ internal sealed class SpaceGameApplication : GameApplication
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/metal_crate_tall.glb");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/wk7_unit_blocks_advanced_huth_will/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/waterbottle/WaterBottle.gltf");
-        _modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/FlightHelmet/FlightHelmet.gltf");
+        //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/FlightHelmet/FlightHelmet.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/DamagedHelmet/DamagedHelmet.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/x_sphere_sci-fi/scene.gltf");
         //_modelLibrary.AddModelFromFile("SM_Kentaur", "Data/Props/Skull/SM_Skull_Optimized_point2.gltf");
