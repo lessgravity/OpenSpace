@@ -34,19 +34,23 @@ layout(binding = 1, std430) readonly buffer InstanceBuffer
     GpuModelMeshInstance Instances[];
 } instanceBuffer;
 
+mat3 create_tbn(in mat3 transform)
+{
+    const vec3 bitangent = cross(normalize(i_normal), normalize(i_tangent.xyz)) * i_tangent.w;
+    const vec3 T = normalize(transform * i_tangent.xyz);
+    const vec3 B = normalize(transform * bitangent);
+    const vec3 N = normalize(transform * i_normal);
+    return mat3(T, B, N);
+}
+
 void main()
 {
     GpuModelMeshInstance modelMeshInstance = instanceBuffer.Instances[gl_BaseInstance + gl_DrawID];
     v_position = (modelMeshInstance.WorldMatrix * vec4(i_position, 1.0)).xyz;
-    
-    mat3 normalMatrix = mat3(transpose(inverse(mat3(modelMeshInstance.WorldMatrix))));
-    vec3 tangent = normalize(normalMatrix * i_tangent.xyz);
-    vec3 normal = normalize(normalMatrix * i_normal);
-    vec3 biTangent = normalize(cross(normal, tangent)) * i_tangent.w;
-
+  
     v_uv = i_uv;
     v_mesh_material_id = modelMeshInstance.MaterialId.x;
-    v_tbn = mat3(tangent, biTangent, normal);
+    v_tbn = create_tbn(mat3(transpose(inverse(mat3(modelMeshInstance.WorldMatrix)))));
     
     gl_Position = cameraInformation.ProjectionMatrix * cameraInformation.ViewMatrix * vec4(v_position, 1.0);
 }

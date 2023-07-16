@@ -67,15 +67,10 @@ void main()
         discard;
     }
 
-    vec3 normal = vec3(0);
+    vec3 normal = normalize(v_tbn[2]);
     if (material.NormalTexture.x != 0)
     {
-        normal = normalize(texture(sampler2D(material.NormalTexture), v_uv).rgb * 2.0 - 1.0);
-        normal = normalize(v_tbn[0] * normal.x + v_tbn[1] * normal.y + v_tbn[2] * normal.z);
-    }
-    else
-    {
-        normal = normalize(v_tbn[2]);
+        normal = (v_tbn * (texture(sampler2D(material.NormalTexture), v_uv).rgb * 2.0 - 1.0));
     }
 
     float occlusion = 1.0f;
@@ -105,6 +100,8 @@ void main()
     }
     
     o_albedo = albedo;
+    //o_normal = vec4(v_tbn[2], 1.0);
+    //o_normal = vec4(vec3(length(normalize(cross(v_tbn[0], normal)))), 1.0);
     o_normal = vec4(normal, 1.0);
     o_material = vec4(occlusion, roughness, metalness, 1.0);
     o_motion = vec4(0.5, 0.5, v_mesh_material_id, 1.0);
